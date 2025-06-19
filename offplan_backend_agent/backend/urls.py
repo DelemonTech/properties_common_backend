@@ -41,4 +41,5 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('agents/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
+    path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
 ]
