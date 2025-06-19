@@ -28,6 +28,9 @@ SECRET_KEY = 'django-insecure-^_s_w2wzg#21n@@-^5%-rgd52!arne$i$2isl#@@mky)-iwp91
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+
 ALLOWED_HOSTS = [
     "offplan-backend.onrender.com",  # ✅ Your Render service URL
     "localhost",                     # optional for local dev
@@ -36,15 +39,16 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://offplanmarket.vercel.app"
+    "https://offplan-backend.onrender.com",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://offplanmarket.vercel.app",
     "http://localhost:3000",  # for development
+    "https://offplan-backend.onrender.com",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Application definition
 
