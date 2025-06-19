@@ -22,6 +22,10 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from api.views.agent_details_username import AgentDetailByUsernameView
 from django.http import HttpResponse
+from api.views.property_filter import FilterPropertiesView
+from api.views.properties_list import PropertyListView
+from api.views.property_details import PropertyDetailView
+from api.views.cities_list import CityListView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -43,4 +47,8 @@ urlpatterns = [
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('agents/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
+    path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
+    path("properties/", PropertyListView.as_view(), name="property-list"),
+    path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
+    path("cities/", CityListView.as_view(), name="city-list"),
 ]

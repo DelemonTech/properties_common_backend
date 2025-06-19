@@ -74,16 +74,20 @@ def parse_external_datetime(dt_str):
 
 def update_property(item):
     city_data = item.get("city") or {}
-    city, _ = City.objects.get_or_create(
-        id=city_data.get("id"),
-        defaults={"name": city_data.get("name", "")}
-    ) if city_data else (None, False)
+    city = None
+    if city_data and city_data.get("id"):
+        city, _ = City.objects.get_or_create(
+            id=city_data["id"],
+            defaults={"name": city_data.get("name", "")}
+        )
 
     district_data = item.get("district") or {}
-    district, _ = District.objects.get_or_create(
-        id=district_data.get("id"),
-        defaults={"name": district_data.get("name", ""), "city": city}
-    ) if district_data and city else (None, False)
+    district = None
+    if district_data and district_data.get("id") and city:
+        district, _ = District.objects.get_or_create(
+            id=district_data["id"],
+            defaults={"name": district_data.get("name", ""), "city": city}
+        )
 
     developer_data = item.get("developer_company") or {}
     developer, _ = DeveloperCompany.objects.get_or_create(
