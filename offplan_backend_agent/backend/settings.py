@@ -28,7 +28,17 @@ SECRET_KEY = 'django-insecure-^_s_w2wzg#21n@@-^5%-rgd52!arne$i$2isl#@@mky)-iwp91
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "offplan-backend.onrender.com",  # ✅ Your Render service URL
+    "localhost",                     # optional for local dev
+    "127.0.0.1"
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://offplan-backend.onrender.com",
+    "https://offplanmarket.vercel.app"
+]
+
 
 
 # Application definition
@@ -42,9 +52,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',  # Your app for agent management
     'drf_yasg',
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -107,12 +119,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
-]
-
-ALLOWED_HOSTS = [
-    "offplan-backend.onrender.com",  # ✅ Your Render service URL
-    "localhost",                     # optional for local dev
-    "127.0.0.1"
 ]
 
 
