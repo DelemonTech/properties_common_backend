@@ -35,7 +35,6 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://offplan-backend.onrender.com",
     "https://offplanmarket.vercel.app"
 ]
 
@@ -45,6 +44,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 
