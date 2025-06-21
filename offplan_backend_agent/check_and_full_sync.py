@@ -64,8 +64,10 @@ def compare_updates(external_props, local_props):
             diffs.append((item, "❌ Not in local DB"))
         elif ext_updated_at != local_updated_at:
             diffs.append((item, f"🛠️ Timestamp mismatch → ext: {ext_updated_at} | local: {local_updated_at}"))
+        # Else: they match → do not add to diffs
 
     return diffs
+
 
 
 def parse_external_datetime(dt_str):

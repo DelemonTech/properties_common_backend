@@ -11,4 +11,9 @@ class CityListView(APIView):
     def get(self, request):
         cities = City.objects.all().order_by("name")
         serializer = CitySerializer(cities, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({
+            "status": True,
+            "message": "Cities fetched successfully",
+            "data": serializer.data,
+            "errors": None
+        }, status=status.HTTP_200_OK)

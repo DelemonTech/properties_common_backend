@@ -13,6 +13,18 @@ class PropertyDetailView(APIView):
         try:
             prop = Property.objects.get(id=id)
             serializer = PropertySerializer(prop)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({
+                "status": True,
+                "message": "Property fetched successfully",
+                "data": serializer.data,
+                "errors": None
+            }, status=status.HTTP_200_OK)
         except Property.DoesNotExist:
-            return Response({"detail": "Property not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                "status": False,
+                "message": "Property not found",
+                "data": None,
+                "errors": {
+                    "id": ["No property found with this ID."]
+                }
+            }, status=status.HTTP_404_NOT_FOUND)

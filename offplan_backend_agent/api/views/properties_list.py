@@ -14,14 +14,18 @@ class CustomPagination(PageNumberPagination):
     def get_paginated_response(self, data):
         request = self.request
         current_page = self.page.number
-        base_url = request.build_absolute_uri().split('?')[0]
 
         return Response({
-            "count": self.page.paginator.count,
-            "current_page": current_page,
-            "next_page_url": self.get_next_link(),
-            "previous_page_url": self.get_previous_link(),
-            "results": data,
+            "status": True,
+            "message": "Properties fetched successfully",
+            "data": {
+                "count": self.page.paginator.count,
+                "current_page": current_page,
+                "next_page_url": self.get_next_link(),
+                "previous_page_url": self.get_previous_link(),
+                "results": data
+            },
+            "errors": None
         })
 
 

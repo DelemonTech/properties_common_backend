@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^_s_w2wzg#21n@@-^5%-rgd52!arne$i$2isl#@@mky)-iwp91'
+SECRET_KEY = 'django-insecure-muc7ruzx=f)x!-b#y(*33naudgpva)#uv-%$p$%hb*oi0qdbgy'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -116,6 +116,17 @@ DATABASES = {
             'sslmode': 'require'
         }
     }
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "JWT format: **Bearer &lt;your_token&gt;**",
+        }
+    },
 }
 
 # Password validation

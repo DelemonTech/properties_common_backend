@@ -5,3 +5,8 @@ router = DefaultRouter()
 router.register(r'admin/agents', AdminAgentDetailViewSet, basename='admin-agents')
 
 urlpatterns = router.urls
+
+urlpatterns = [
+    ...
+    path('', include(router.urls)),
+]

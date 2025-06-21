@@ -26,6 +26,9 @@ from api.views.property_filter import FilterPropertiesView
 from api.views.properties_list import PropertyListView
 from api.views.property_details import PropertyDetailView
 from api.views.cities_list import CityListView
+from api.views.agent_register import AgentRegisterView
+from api.views.agent_update import AgentUpdateView
+from api.views.agent_delete import AgentDeleteView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -35,20 +38,25 @@ schema_view = get_schema_view(
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
+   authentication_classes=[],
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('agents/', AgentListView.as_view(), name='agent-list'),
+    # path('agents/', AgentListView.as_view(), name='agent-list'),
 
     # Swagger routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('agents/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
+    path('agent/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
     path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
     path("properties/", PropertyListView.as_view(), name="property-list"),
     path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
     path("cities/", CityListView.as_view(), name="city-list"),
+    path('agent/register/', AgentRegisterView.as_view(), name='register-agent'),
+    path('agent/update/<int:id>/', AgentUpdateView.as_view(), name='agent-update'),
+    path('agent/delete/<int:id>/', AgentDeleteView.as_view(), name='agent-delete'),
+    path('agents/list/', AgentListView.as_view(), name='agent-list'),
 ]
