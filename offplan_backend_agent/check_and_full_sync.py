@@ -1,11 +1,15 @@
 import os
 import django
-import requests
-from datetime import datetime, timezone
 
 # Setup Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
+
+import requests
+from datetime import datetime, timezone
+from api.models import PropertyType, PropertyStatus, SalesStatus
+
+
 
 from api.models import Property, City, District, DeveloperCompany
 
@@ -97,6 +101,14 @@ def update_property(item):
         defaults={"name": developer_data.get("name", "")}
     ) if developer_data else (None, False)
 
+    property_type_name = safe_get(item, "property_type", "name") or "Unknown"
+    property_status_name = safe_get(item, "property_status", "name") or "Unknown"
+    sales_status_name = safe_get(item, "sales_status", "name") or "Unknown"
+
+    property_type = PropertyType.objects.get_or_create(name=property_type_name)[0]
+    property_status = PropertyStatus.objects.get_or_create(name=property_status_name)[0]
+    sales_status = SalesStatus.objects.get_or_create(name=sales_status_name)[0]
+
     Property.objects.update_or_create(
         id=item["id"],
         defaults={
@@ -110,9 +122,9 @@ def update_property(item):
             "city": city,
             "district": district,
             "developer": developer,
-            "property_type": safe_get(item, "property_type", "name") or "",
-            "property_status": safe_get(item, "property_status", "name") or "",
-            "sales_status": safe_get(item, "sales_status", "name") or "",
+            "property_type": property_type,
+            "property_status": property_status,
+            "sales_status": sales_status,
             "updated_at": parse_external_datetime(item["updated_at"]) if item.get("updated_at") else None,
         }
     )
