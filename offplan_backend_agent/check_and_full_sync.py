@@ -167,16 +167,20 @@ def full_sync_all_pages():
 
 # --- Main Autonomous Routine ---
 if __name__ == "__main__":
-    print("🔄 Comparing latest 10 updated records...")
+    print("🔄 Comparing latest updated records...")
+
     ext_props = fetch_latest_external()
     local_props = fetch_latest_local()
     diffs = compare_updates(ext_props, local_props)
 
     if not diffs:
         print("✅ No mismatch found. DB is up to date.")
-    elif len(diffs) >= 10:
-        print(f"⚠️ {len(diffs)} mismatches found. Performing full sync...")
+
+    # FULL SYNC only if every external record mismatches AND there are 10+ items
+    elif len(diffs) == len(ext_props) and len(ext_props) >= 10:
+        print(f"⚠️ All {len(diffs)} records mismatched. Performing full sync...")
         full_sync_all_pages()
+
     else:
         print(f"🔧 {len(diffs)} mismatches found. Updating individually...\n")
         for item, reason in diffs:

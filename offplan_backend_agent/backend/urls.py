@@ -29,6 +29,7 @@ from api.views.cities_list import CityListView
 from api.views.agent_register import AgentRegisterView
 from api.views.agent_update import AgentUpdateView
 from api.views.agent_delete import AgentDeleteView
+from api.views.property_status_counts import PropertyStatusCountView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -59,4 +60,5 @@ urlpatterns = [
     path('agent/update/<int:id>/', AgentUpdateView.as_view(), name='agent-update'),
     path('agent/delete/<int:id>/', AgentDeleteView.as_view(), name='agent-delete'),
     path('agents/list/', AgentListView.as_view(), name='agent-list'),
+    path('properties/status-counts/', PropertyStatusCountView.as_view(), name='property-status-counts'),
 ]

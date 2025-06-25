@@ -32,86 +32,125 @@ HEADERS = {
 
 # ✅ Helpers
 def fetch_external_properties(page):
-    url = EXTERNAL_URL if page == 1 else f"{EXTERNAL_URL}?page={page}"
     try:
-        log.info(f"🌐 Fetching: {url}")
-        response = requests.post(url, headers=HEADERS)
+        if page == 1:
+            url = EXTERNAL_URL
+            payload = {}
+        else:
+            url = f"{EXTERNAL_URL}?page={page}"
+            payload = {}
+
+        log.info(f"\U0001F310 Fetching: {url}")
+        response = requests.post(url, headers=HEADERS, json=payload)
         response.raise_for_status()
         data = response.json()
-        props = data.get("data") or []
-        log.info(f"→ Got {len(props)} properties")
-        return props
+
+        if isinstance(data.get("property"), dict):
+            return [data["property"]]
+        elif isinstance(data.get("properties", {}).get("data"), list):
+            return data["properties"]["data"]
+        else:
+            log.warning("⚠️ Unexpected structure in response.")
+            return []
+
     except requests.RequestException as e:
-        log.error(f"❌ Failed to fetch external properties (page {page}): {e}")
-        return None
+        log.error(f"❌ Request failed on page {page}: {e}")
+        return []
 
-def is_different(internal, external):
-    return (
-        internal.title != external.get("title") or
-        internal.description != external.get("description") or
-        internal.cover != external.get("cover") or
-        internal.address != external.get("address") or
-        internal.delivery_date != external.get("delivery_date") or
-        internal.completion_rate != external.get("completion_rate") or
-        internal.residential_units != external.get("residential_units") or
-        internal.commercial_units != external.get("commercial_units") or
-        internal.payment_plan != external.get("payment_plan") or
-        internal.post_delivery != external.get("post_delivery") or
-        internal.payment_minimum_down_payment != external.get("payment_minimum_down_payment") or
-        internal.guarantee_rental_guarantee != external.get("guarantee_rental_guarantee") or
-        internal.guarantee_rental_guarantee_value != external.get("guarantee_rental_guarantee_value") or
-        internal.downPayment != external.get("downPayment") or
-        internal.low_price != external.get("low_price") or
-        internal.min_area != external.get("min_area")
-    )
-
-def get_or_none(model, pk):
-    try:
-        return model.objects.get(pk=pk)
-    except model.DoesNotExist:
+def get_or_none(model, data):
+    if not data:
         return None
+    if isinstance(data, dict):
+        return model.objects.filter(id=data.get("id")).first()
+    return model.objects.filter(id=data).first()
 
 def update_internal_property(internal, external):
     internal.title = external.get("title")
     internal.description = external.get("description")
     internal.cover = external.get("cover")
     internal.address = external.get("address")
+    internal.address_text = external.get("address_text")
     internal.delivery_date = external.get("delivery_date")
     internal.completion_rate = external.get("completion_rate")
     internal.residential_units = external.get("residential_units")
     internal.commercial_units = external.get("commercial_units")
     internal.payment_plan = external.get("payment_plan")
-    internal.post_delivery = external.get("post_delivery")
-    internal.payment_minimum_down_payment = external.get("payment_minimum_down_payment")
-    internal.guarantee_rental_guarantee = external.get("guarantee_rental_guarantee")
-    internal.guarantee_rental_guarantee_value = external.get("guarantee_rental_guarantee_value")
-    internal.downPayment = external.get("downPayment")
-    internal.low_price = external.get("low_price")
-    internal.min_area = external.get("min_area")
+    
+    # Handle boolean/int fields safely with fallback
+    internal.post_delivery = external.get("post_delivery") or 0
+    internal.payment_minimum_down_payment = external.get("payment_minimum_down_payment") or 0
+    internal.guarantee_rental_guarantee = external.get("guarantee_rental_guarantee") or 0
+    internal.guarantee_rental_guarantee_value = external.get("guarantee_rental_guarantee_value") or 0
+    internal.downPayment = external.get("downPayment") or 0
+    internal.low_price = external.get("low_price") or 0
+    internal.min_area = external.get("min_area") or 0
 
     # Foreign keys
     internal.city = get_or_none(City, external.get("city"))
     internal.district = get_or_none(District, external.get("district"))
-    internal.developer = get_or_none(DeveloperCompany, external.get("developer"))
+    internal.developer = get_or_none(DeveloperCompany, external.get("developer_company"))
     internal.property_type = get_or_none(PropertyType, external.get("property_type"))
     internal.property_status = get_or_none(PropertyStatus, external.get("property_status"))
     internal.sales_status = get_or_none(SalesStatus, external.get("sales_status"))
 
-    # External updated_at
+    # updated_at
     updated_at_str = external.get("updated_at")
     if updated_at_str:
         internal.updated_at = date_parser.parse(updated_at_str)
 
     internal.save()
 
+def is_different(internal, external):
+    if internal.description != external.get("description"):
+        log.info(f"✏️ Description updated for Property ID {internal.id}")
+        return True
+    fields_to_check = [
+        ("title", external.get("title")),
+        ("description", external.get("description")),
+        ("cover", external.get("cover")),
+        ("address", external.get("address")),
+        ("address_text", external.get("address_text")),
+        ("delivery_date", external.get("delivery_date")),
+        ("completion_rate", external.get("completion_rate")),
+        ("residential_units", external.get("residential_units")),
+        ("commercial_units", external.get("commercial_units")),
+        ("payment_plan", external.get("payment_plan")),
+        ("post_delivery", external.get("post_delivery") or 0),
+        ("payment_minimum_down_payment", external.get("payment_minimum_down_payment") or 0),
+        ("guarantee_rental_guarantee", external.get("guarantee_rental_guarantee") or 0),
+        ("guarantee_rental_guarantee_value", external.get("guarantee_rental_guarantee_value") or 0),
+        ("downPayment", external.get("downPayment") or 0),
+        ("low_price", external.get("low_price") or 0),
+        ("min_area", external.get("min_area") or 0),
+    ]
+
+    for field, ext_val in fields_to_check:
+        if getattr(internal, field, None) != ext_val:
+            return True
+
+    # Also compare foreign keys by ID
+    fk_fields = {
+        "city_id": external.get("city", {}).get("id"),
+        "district_id": external.get("district", {}).get("id"),
+        "developer_id": external.get("developer_company", {}).get("id"),
+        "property_type_id": external.get("property_type", {}).get("id"),
+        "property_status_id": external.get("property_status", {}).get("id"),
+        "sales_status_id": external.get("sales_status", {}).get("id"),
+    }
+
+    for field, ext_val in fk_fields.items():
+        if getattr(internal, field, None) != ext_val:
+            return True
+
+    return False
+
 def main():
     page = 1
     updated_count = 0
     skipped_count = 0
     created_count = 0
-    stop = False
 
-    while not stop:
+    while True:
         props = fetch_external_properties(page)
         if props is None:
             log.warning("⚠️ Aborting due to fetch error.")
@@ -127,12 +166,6 @@ def main():
 
             try:
                 internal = Property.objects.get(id=prop_id)
-                external_updated = date_parser.parse(ext.get("updated_at"))
-
-                if internal.updated_at == external_updated:
-                    log.info(f"🛑 Match found on ID {prop_id}, stopping further sync.")
-                    stop = True
-                    break
 
                 if is_different(internal, ext):
                     update_internal_property(internal, ext)
@@ -141,8 +174,8 @@ def main():
                 else:
                     log.info(f"🔁 Skipped Property ID {prop_id} (no change)")
                     skipped_count += 1
+
             except Property.DoesNotExist:
-                # Create new property
                 log.info(f"➕ Creating new Property ID {prop_id}")
                 new_property = Property(id=prop_id)
                 update_internal_property(new_property, ext)
