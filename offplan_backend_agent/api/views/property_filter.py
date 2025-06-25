@@ -8,6 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .properties_list import CustomPagination
 
+
 class FilterPropertiesView(APIView):
     permission_classes = [AllowAny]
 
@@ -26,6 +27,7 @@ class FilterPropertiesView(APIView):
                 'min_area': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'max_area': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'property_status': openapi.Schema(type=openapi.TYPE_STRING),
+                'sales_status': openapi.Schema(type=openapi.TYPE_STRING),  # <-- New field
             },
         )
     )
@@ -63,6 +65,9 @@ class FilterPropertiesView(APIView):
 
         if property_status := data.get("property_status"):
             queryset = queryset.filter(property_status__name__icontains=property_status)
+
+        if sales_status := data.get("sales_status"):
+            queryset = queryset.filter(sales_status__name__icontains=sales_status)
 
         paginator = CustomPagination()
         paginator.request = request
