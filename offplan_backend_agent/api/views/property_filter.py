@@ -8,6 +8,9 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .properties_list import CustomPagination
 
+import calendar
+from datetime import datetime
+
 
 class FilterPropertiesView(APIView):
     permission_classes = [AllowAny]
@@ -21,16 +24,13 @@ class FilterPropertiesView(APIView):
                 'property_type': openapi.Schema(type=openapi.TYPE_STRING),
                 'unit_type': openapi.Schema(type=openapi.TYPE_STRING),
                 'rooms': openapi.Schema(type=openapi.TYPE_STRING),
-                'delivery_year': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'delivery_year': openapi.Schema(type=openapi.TYPE_INTEGER, description="Filter properties with delivery year >= this year"),
                 'min_price': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'max_price': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'min_area': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'max_area': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'property_status': openapi.Schema(type=openapi.TYPE_STRING),
                 'sales_status': openapi.Schema(type=openapi.TYPE_STRING),
-                'delivery_date': openapi.Schema(type=openapi.TYPE_STRING),
-                'title': openapi.Schema(type=openapi.TYPE_STRING),
-                'developer': openapi.Schema(type=openapi.TYPE_STRING),
             },
         )
     )
@@ -54,7 +54,29 @@ class FilterPropertiesView(APIView):
             queryset = queryset.filter(grouped_apartments__rooms=rooms)
 
         if delivery_year := data.get("delivery_year"):
-            queryset = queryset.filter(delivery_date__icontains=str(delivery_year))
+            try:
+                year = int(delivery_year)
+                start_dt = datetime(year, 1, 1, 0, 0, 0)
+                start_unix = calendar.timegm(start_dt.utctimetuple())
+
+                # Special handling based on year
+                if year < 2030:
+                    # Get end of year (Dec 31, 23:59:59)
+                    end_dt = datetime(year, 12, 31, 23, 59, 59)
+                    end_unix = calendar.timegm(end_dt.utctimetuple())
+
+                    queryset = queryset.filter(
+                        delivery_date__gte=start_unix,
+                        delivery_date__lte=end_unix
+                    )
+                else:
+                    # For 2030 and beyond: year and above
+                    queryset = queryset.filter(delivery_date__gte=start_unix)
+
+            except ValueError:
+                pass  # Ignore invalid input
+
+
 
         if min_price := data.get("min_price"):
             queryset = queryset.filter(low_price__gte=min_price)
@@ -71,15 +93,6 @@ class FilterPropertiesView(APIView):
 
         if sales_status := data.get("sales_status"):
             queryset = queryset.filter(sales_status__name__icontains=sales_status)
-        
-        if delivery_date := data.get("delivery_date"):
-            queryset = queryset.filter(delivery_date__icontains=delivery_date)  
-        
-        if title := data.get("title"):
-            queryset = queryset.filter(title__icontains=title)
-        
-        if developer :=  data.get("developer"):
-            queryset = queryset.filter(developer__name__icontains=developer)
 
         paginator = CustomPagination()
         paginator.request = request

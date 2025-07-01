@@ -131,8 +131,13 @@ class GroupedApartment(models.Model):
     def __str__(self):
         return f"{self.unit_type} - {self.rooms}"
 
-
 class AgentDetails(models.Model):
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
+
     id = models.BigAutoField(primary_key=True)
     username = models.TextField(unique=True)
     name = models.TextField()
@@ -145,17 +150,27 @@ class AgentDetails(models.Model):
     years_of_experience = models.TextField(null=True, blank=True)
     total_business_deals = models.TextField(null=True, blank=True)
     rank_top_performing = models.TextField(null=True, blank=True)
+
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDER_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Allowed values: male, female, other"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     fa_name = models.TextField(null=True, blank=True)
     fa_description = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'agent_details'
-        unique_together = ('id', 'username')  # If matching composite PK in Supabase
-        managed = False  # Since you're syncing from external DB
+        unique_together = ('id', 'username')
+        managed = True  # Ensure True only if Django manages the table
 
     def __str__(self):
         return self.username
+
 
 class Consultation(models.Model):
     full_name=models.CharField(max_length=20)
