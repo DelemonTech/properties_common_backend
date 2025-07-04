@@ -9,7 +9,7 @@ class City(models.Model):
 
 class District(models.Model):
     name = models.CharField(max_length=100)
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='districts')
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='districts',null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -44,6 +44,7 @@ class SalesStatus(models.Model):
 
 
 class Facility(models.Model):
+    id = models.BigIntegerField(primary_key=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -65,6 +66,7 @@ class Property(models.Model):
     property_status = models.ForeignKey(PropertyStatus, on_delete=models.SET_NULL, null=True, related_name='properties')
     sales_status = models.ForeignKey(SalesStatus, on_delete=models.SET_NULL, null=True, related_name='properties')
 
+    facilities = models.ManyToManyField("Facility", related_name="properties", blank=True)
     completion_rate = models.IntegerField(default=0, blank=True, null=True)
     residential_units = models.IntegerField(default=0, blank=True, null=True)
     commercial_units = models.IntegerField(default=0, blank=True, null=True)
@@ -85,14 +87,44 @@ class Property(models.Model):
     class Meta:
         ordering = ['-updated_at']
 
+class PropertyUnit(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    property = models.ForeignKey("Property", on_delete=models.CASCADE, related_name="property_units")
+    apartment_id = models.IntegerField(null=True, blank=True)
+    apartment_type_id = models.IntegerField(null=True, blank=True)
+    no_of_baths = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=255, null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
+    area_type = models.IntegerField(null=True, blank=True)
+    start_area = models.FloatField(null=True, blank=True)
+    end_area = models.FloatField(null=True, blank=True)
+    price = models.FloatField(null=True, blank=True)
+    price_type = models.IntegerField(null=True, blank=True)
+    start_price = models.FloatField(null=True, blank=True)
+    end_price = models.FloatField(null=True, blank=True)
+    floor_no = models.IntegerField(null=True, blank=True)
+    apt_no = models.CharField(max_length=255, null=True, blank=True)
+    floor_plan_image = models.JSONField(null=True, blank=True)
+    unit_image = models.URLField(null=True, blank=True)
+    unit_count = models.IntegerField(default=1)
+    is_demand = models.BooleanField(default=False)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.apt_no or 'Unit'} in Property {self.property_id}"
 
 class PropertyImage(models.Model):
+    id = models.BigAutoField(primary_key=True)
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='property_images')
     image = models.URLField()
     type = models.IntegerField()  # 1 = floorplan, 2 = gallery, etc.
+    property_unit = models.ForeignKey(PropertyUnit, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Image for {self.property.title}"
+        return f"Image for {self.property_id}"
 
 
 class PropertyFacility(models.Model):
@@ -114,8 +146,8 @@ class PaymentPlan(models.Model):
 
 class PaymentPlanValue(models.Model):
     property_payment_plan = models.ForeignKey(PaymentPlan, on_delete=models.CASCADE, related_name='values')
-    name = models.CharField(max_length=255)
-    value = models.CharField(max_length=20)
+    name = models.CharField(max_length=255)  # Keep this large enough
+    value = models.CharField(max_length=255)  # Increased from 20 to 255
 
     def __str__(self):
         return f"{self.name}: {self.value}"

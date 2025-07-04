@@ -17,9 +17,14 @@ logging.basicConfig(
 log = logging.getLogger()
 
 # ✅ Import models
-from api.models import Property, City, District, DeveloperCompany, PropertyType, PropertyStatus, SalesStatus
+from api.models import (
+    Property, City, District, DeveloperCompany, PropertyType,
+    PropertyStatus, SalesStatus, Facility, PropertyUnit,
+    GroupedApartment, PropertyImage, PaymentPlan, PaymentPlanValue
+)
 
 # ✅ API Configuration
+FILTERS_URL = "https://panel.estaty.app/api/v1/getFilters"
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 SINGLE_PROPERTY_URL = "https://panel.estaty.app/api/v1/getProperty"
 API_KEY = os.getenv("ESTATY_API_KEY")
@@ -32,24 +37,77 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-# ✅ Delivery date parser
-def parse_delivery_date(raw_date):
-    if not raw_date:
+# ✅ Parse date safely to UNIX timestamp
+def parse_unix_date(raw_date):
+    if not raw_date or not isinstance(raw_date, str):
+        return None
+    try:
+        if '/' in raw_date:
+            dt = datetime.strptime(raw_date, "%m/%Y")
+        else:
+            dt = date_parser.parse(raw_date)
+        return int(dt.timestamp())
+    except Exception:
         return None
 
-    try:
-        parsed = date_parser.parse(raw_date)
-        return int(parsed.timestamp())
-    except Exception:
-        pass
+# ✅ Upsert helper for related models
+def upsert_related_model(model, data):
+    if not data:
+        return None
 
-    try:
-        parsed = datetime.strptime(raw_date, "%m/%Y")
-        return int(parsed.timestamp())
-    except Exception:
-        pass
+    if isinstance(data, dict):
+        obj, _ = model.objects.update_or_create(
+            id=data["id"],
+            defaults={"name": data.get("name", f"Unnamed {model.__name__}")}
+        )
+        return obj
 
-    return None
+    obj = model.objects.filter(id=data).first()
+    if not obj:
+        log.warning(f"⚠️ {model.__name__} ID={data} received without name. Skipping creation.")
+    return obj
+
+# ✅ Sync Filters API
+def sync_filters():
+    try:
+        log.info("🌐 Fetching filter data...")
+        response = requests.post(FILTERS_URL, headers=HEADERS, json={})
+        response.raise_for_status()
+        filters = response.json()
+
+        for city in filters.get("cities", []):
+            upsert_related_model(City, city)
+
+        for district in filters.get("districts", []):
+            city_obj = City.objects.filter(id=district.get("city_id")).first()
+            if not city_obj and district.get("city"):
+                city_obj = upsert_related_model(City, district["city"])
+            District.objects.update_or_create(
+                id=district["id"],
+                defaults={
+                    "name": district.get("name", f"Unnamed District"),
+                    "city": city_obj,
+                },
+            )
+
+        for dev in filters.get("developer_companies", []):
+            upsert_related_model(DeveloperCompany, dev)
+        
+        for prop_type in filters.get("property_types", []):
+            upsert_related_model(PropertyType, prop_type)
+
+        for status in filters.get("property_statuses", []):
+            upsert_related_model(PropertyStatus, status)
+
+        for sales in filters.get("sales_statuses", []):
+            upsert_related_model(SalesStatus, sales)
+
+        for fac in filters.get("facilities", []):
+            upsert_related_model(Facility, fac)
+
+        log.info("✅ Filters synced successfully.")
+    except requests.RequestException as e:
+        log.error(f"❌ Failed to fetch filters: {e}")
 
 # ✅ Fetch property list (IDs only)
 def fetch_external_properties(page):
@@ -75,13 +133,84 @@ def fetch_property_by_id(prop_id):
         log.error(f"❌ Failed to fetch property ID {prop_id}: {e}")
         return None
 
-# ✅ Safe FK fetcher
-def get_or_none(model, data):
-    if not data:
-        return None
-    if isinstance(data, dict):
-        return model.objects.filter(id=data.get("id")).first()
-    return model.objects.filter(id=data).first()
+# ✅ Sync Grouped Apartments
+def sync_grouped_apartments(prop, external_grouped_apartments):
+    prop.grouped_apartments.all().delete()
+    for apt_data in external_grouped_apartments:
+        normalized = {k.lower(): v for k, v in apt_data.items()}
+        GroupedApartment.objects.create(
+            property=prop,
+            unit_type=normalized.get("unit_type", "Unknown"),
+            rooms=normalized.get("rooms", "Unknown"),
+            min_price=normalized.get("min_price", 0.0),
+            min_area=normalized.get("min_area", 0.0),
+        )
+
+# ✅ Sync property units
+def sync_property_units(prop, external_units):
+    PropertyUnit.objects.filter(property=prop).delete()
+    for unit_data in external_units:
+        PropertyUnit.objects.update_or_create(
+            id=unit_data.get("id"),
+            defaults={
+                "property": prop,
+                "apartment_type_id": unit_data.get("apartment_type_id"),
+                "no_of_baths": unit_data.get("no_of_baths"),
+                "status": unit_data.get("status"),
+                "area": unit_data.get("area"),
+                "area_type": unit_data.get("area_type"),
+                "start_area": unit_data.get("start_area"),
+                "end_area": unit_data.get("end_area"),
+                "price": unit_data.get("price"),
+                "price_type": unit_data.get("price_type"),
+                "start_price": unit_data.get("start_price"),
+                "end_price": unit_data.get("end_price"),
+                "floor_no": unit_data.get("floor_no"),
+                "apt_no": unit_data.get("apt_no"),
+                "floor_plan_image": unit_data.get("floor_plan_image"),
+                "unit_image": unit_data.get("unit_image"),
+                "created_at": date_parser.parse(unit_data.get("created_at")) if unit_data.get("created_at") else None,
+                "updated_at": date_parser.parse(unit_data.get("updated_at")) if unit_data.get("updated_at") else None,
+                "unit_count": unit_data.get("unit_count", 1),
+                "is_demand": unit_data.get("is_demand", False),
+            },
+        )
+
+# ✅ Sync property images
+def sync_property_images(prop, external_images):
+    PropertyImage.objects.filter(property=prop).delete()
+    for img_data in external_images:
+        PropertyImage.objects.create(
+            property=prop,
+            image=img_data.get("image"),
+            type=img_data.get("type"),
+            created_at=date_parser.parse(img_data.get("created_at")) if img_data.get("created_at") else None,
+            updated_at=date_parser.parse(img_data.get("updated_at")) if img_data.get("updated_at") else None,
+        )
+
+# ✅ Sync payment plans
+def sync_payment_plans(prop, external_payment_plans):
+    prop.payment_plans.all().delete()
+    for plan in external_payment_plans:
+        payment_plan = PaymentPlan.objects.create(
+        property=prop,
+        name=plan.get("name", "Unnamed Plan"),
+        description=plan.get("description") or ""
+    )
+        for value in plan.get("values", []):
+            PaymentPlanValue.objects.create(
+                property_payment_plan=payment_plan,
+                name=value.get("name", ""),
+                value=value.get("value", "")
+            )
+
+# ✅ Sync facilities
+def sync_facilities(prop, external_facilities):
+    prop.facilities.clear()
+    for fac_data in external_facilities:
+        facility = upsert_related_model(Facility, fac_data.get("facility") or fac_data)
+        if facility:
+            prop.facilities.add(facility)
 
 # ✅ Update internal property
 def update_internal_property(internal, external):
@@ -90,27 +219,31 @@ def update_internal_property(internal, external):
     internal.cover = external.get("cover")
     internal.address = external.get("address")
     internal.address_text = external.get("address_text")
-    internal.delivery_date = parse_delivery_date(external.get("delivery_date"))
-
+    internal.delivery_date = parse_unix_date(external.get("delivery_date"))
     internal.completion_rate = external.get("completion_rate")
     internal.residential_units = external.get("residential_units")
     internal.commercial_units = external.get("commercial_units")
     internal.payment_plan = external.get("payment_plan")
-
-    internal.post_delivery = external.get("post_delivery") or 0
+    internal.post_delivery = external.get("post_delivery") or False
     internal.payment_minimum_down_payment = external.get("payment_minimum_down_payment") or 0
-    internal.guarantee_rental_guarantee = external.get("guarantee_rental_guarantee") or 0
+    internal.guarantee_rental_guarantee = external.get("guarantee_rental_guarantee") or False
     internal.guarantee_rental_guarantee_value = external.get("guarantee_rental_guarantee_value") or 0
     internal.downPayment = external.get("downPayment") or 0
     internal.low_price = external.get("low_price") or 0
     internal.min_area = external.get("min_area") or 0
 
-    internal.city = get_or_none(City, external.get("city"))
-    internal.district = get_or_none(District, external.get("district"))
-    internal.developer = get_or_none(DeveloperCompany, external.get("developer_company"))
-    internal.property_type = get_or_none(PropertyType, external.get("property_type"))
-    internal.property_status = get_or_none(PropertyStatus, external.get("property_status"))
-    internal.sales_status = get_or_none(SalesStatus, external.get("sales_status"))
+    # Related models
+    internal.city = upsert_related_model(City, external.get("city"))
+    district_obj = upsert_related_model(District, external.get("district"))
+    if district_obj and not district_obj.city:
+        district_obj.city = internal.city
+        district_obj.save()
+    internal.district = district_obj
+
+    internal.developer = upsert_related_model(DeveloperCompany, external.get("developer_company"))
+    internal.property_type = upsert_related_model(PropertyType, external.get("property_type"))
+    internal.property_status = upsert_related_model(PropertyStatus, external.get("property_status"))
+    internal.sales_status = upsert_related_model(SalesStatus, external.get("sales_status"))
 
     updated_at_str = external.get("updated_at")
     if updated_at_str:
@@ -118,55 +251,20 @@ def update_internal_property(internal, external):
 
     internal.save()
 
-# ✅ Check if internal and external data are different
-def is_different(internal, external):
-    if not internal or not external:
-        return True
+    # Sync nested data
+    sync_grouped_apartments(internal, external.get("grouped_apartments", []))
+    sync_property_units(internal, external.get("property_units", []))
+    sync_property_images(internal, external.get("property_images", []))
+    sync_payment_plans(internal, external.get("payment_plans", []))
+    sync_facilities(internal, external.get("property_facilities", []))
 
-    fields = [
-        ("title", external.get("title")),
-        ("description", external.get("description")),
-        ("cover", external.get("cover")),
-        ("address", external.get("address")),
-        ("address_text", external.get("address_text")),
-        ("delivery_date", parse_delivery_date(external.get("delivery_date"))),
-        ("completion_rate", external.get("completion_rate")),
-        ("residential_units", external.get("residential_units")),
-        ("commercial_units", external.get("commercial_units")),
-        ("payment_plan", external.get("payment_plan")),
-        ("post_delivery", external.get("post_delivery") or 0),
-        ("payment_minimum_down_payment", external.get("payment_minimum_down_payment") or 0),
-        ("guarantee_rental_guarantee", external.get("guarantee_rental_guarantee") or 0),
-        ("guarantee_rental_guarantee_value", external.get("guarantee_rental_guarantee_value") or 0),
-        ("downPayment", external.get("downPayment") or 0),
-        ("low_price", external.get("low_price") or 0),
-        ("min_area", external.get("min_area") or 0),
-    ]
-
-    for field, value in fields:
-        if getattr(internal, field, None) != value:
-            return True
-
-    fk_fields = {
-    "city_id": external.get("city", {}).get("id") if external.get("city") else None,
-    "district_id": external.get("district", {}).get("id") if external.get("district") else None,
-    "developer_id": external.get("developer_company", {}).get("id") if external.get("developer_company") else None,
-    "property_type_id": external.get("property_type", {}).get("id") if external.get("property_type") else None,
-    "property_status_id": external.get("property_status", {}).get("id") if external.get("property_status") else None,
-    "sales_status_id": external.get("sales_status", {}).get("id") if external.get("sales_status") else None,
-}
-
-    for field, ext_val in fk_fields.items():
-        if getattr(internal, field, None) != ext_val:
-            return True
-
-    return False
-
-# ✅ Main execution with early exit
+# ✅ Main execution
 def main():
+    sync_filters()
     page = 1
     updated_count = 0
     created_count = 0
+    unchanged_counter = 0
 
     while True:
         props = fetch_external_properties(page)
@@ -174,11 +272,10 @@ def main():
             log.info("✅ No more data.")
             break
 
-        any_changes = False
-
         for summary in props:
             prop_id = summary.get("id")
             if not prop_id:
+                log.error(f"❌ Missing property 'id': {summary}")
                 continue
 
             full_data = fetch_property_by_id(prop_id)
@@ -187,25 +284,34 @@ def main():
 
             try:
                 internal = Property.objects.get(id=prop_id)
-                if is_different(internal, full_data):
-                    update_internal_property(internal, full_data)
-                    log.info(f"✅ Updated Property ID {prop_id}")
-                    updated_count += 1
-                    any_changes = True
-                else:
-                    log.info(f"🔁 Skipped Property ID {prop_id} (unchanged)")
+
+                # ✅ Check if the property is unchanged based on updated_at
+                external_updated_at = date_parser.parse(full_data.get("updated_at")) if full_data.get("updated_at") else None
+                if external_updated_at and internal.updated_at and external_updated_at <= internal.updated_at:
+                    unchanged_counter += 1
+                    log.info(f"🔄 Property ID {prop_id} unchanged ({unchanged_counter}/60).")
+
+                    # ✅ Stop if 15 unchanged records are found
+                    if unchanged_counter >= 60:
+                        log.info("🚦 15 consecutive unchanged properties found. Stopping sync.")
+                        log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")
+                        return
+
+                    continue  # ✅ Skip update since unchanged
+
+                # ✅ Update property if external data is newer
+                update_internal_property(internal, full_data)
+                log.info(f"✅ Updated Property ID {prop_id}")
+                updated_count += 1
+                unchanged_counter = 0  # ✅ Reset counter on update
 
             except Property.DoesNotExist:
+                # ✅ Create new property
                 new_property = Property(id=prop_id)
                 update_internal_property(new_property, full_data)
                 log.info(f"➕ Created Property ID {prop_id}")
                 created_count += 1
-                any_changes = True
-
-        if not any_changes:
-            log.info("🛑 All properties on this page are unchanged. Stopping early.")
-            break
-
+                unchanged_counter = 0  # ✅ Reset counter on creation
         page += 1
 
     log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")

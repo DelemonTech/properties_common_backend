@@ -34,7 +34,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = [
     "offplan-backend.onrender.com",  # ✅ Your Render service URL
     "localhost",                     # optional for local dev
-    "127.0.0.1"
+    "127.0.0.1",
+    "192.168.1.50"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -113,6 +114,7 @@ DATABASES = {
         'HOST': os.getenv("DB_HOST"),
         'PORT': os.getenv("DB_PORT"),
         'OPTIONS': {
+            'options': '-c search_path=public',
             'sslmode': 'require'
         }
     }
