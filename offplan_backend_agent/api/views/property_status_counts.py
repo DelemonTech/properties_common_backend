@@ -8,8 +8,8 @@ class PropertyStatusCountView(APIView):
 
     def get(self, request):
         try:
-            ready_count = Property.objects.filter(property_status_id=2).count()
-            offplan_count = Property.objects.filter(property_status_id=1).count()
+            ready_count = Property.objects.filter(property_status_id=1).count()
+            offplan_count = Property.objects.filter(property_status_id=2).count()
             # sold_count = Property.objects.filter(sales_status_id=3).count()
 
             return Response({

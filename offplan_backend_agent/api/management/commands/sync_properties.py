@@ -5,12 +5,12 @@ from datetime import datetime
 from dateutil import parser as date_parser
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from api.models import (
     Property, City, District, DeveloperCompany, PropertyType,
     PropertyStatus, SalesStatus, Facility, PropertyUnit,
     GroupedApartment, PropertyImage, PaymentPlan, PaymentPlanValue
 )
-from django.conf import settings
 
 # ✅ Logging setup
 log = logging.getLogger("django")
@@ -30,6 +30,7 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
+
 # ✅ Parse date safely to UNIX timestamp
 def parse_unix_date(raw_date):
     if not raw_date or not isinstance(raw_date, str):
@@ -42,6 +43,7 @@ def parse_unix_date(raw_date):
         return int(dt.timestamp())
     except Exception:
         return None
+
 
 # ✅ Upsert helper for related models
 def upsert_related_model(model, data):
@@ -59,6 +61,7 @@ def upsert_related_model(model, data):
     if not obj:
         log.warning(f"⚠️ {model.__name__} ID={data} received without name. Skipping creation.")
     return obj
+
 
 # ✅ Sync Filters API
 def sync_filters():
@@ -102,6 +105,7 @@ def sync_filters():
     except requests.RequestException as e:
         log.error(f"❌ Failed to fetch filters: {e}")
 
+
 # ✅ Fetch all properties and apartments from /filter
 def fetch_all_properties_and_apartments():
     try:
@@ -120,6 +124,7 @@ def fetch_all_properties_and_apartments():
         log.error(f"❌ Failed to fetch properties from /filter: {e}")
         return {}
 
+
 # ✅ Fetch property list (IDs only)
 def fetch_external_properties(page):
     try:
@@ -133,6 +138,7 @@ def fetch_external_properties(page):
         log.error(f"❌ Failed to fetch page {page}: {e}")
         return []
 
+
 # ✅ Fetch full property details by ID
 def fetch_property_by_id(prop_id):
     try:
@@ -140,12 +146,33 @@ def fetch_property_by_id(prop_id):
         response = requests.post(SINGLE_PROPERTY_URL, headers=HEADERS, json={"id": prop_id})
         response.raise_for_status()
         data = response.json()
-        # log.info(f"🔎 Property {prop_id} keys: {list(data.get('property', {}).keys())}")
         log.info(f"🔎 Property {prop_id}")
         return data.get("property")
     except requests.RequestException as e:
         log.error(f"❌ Failed to fetch property ID {prop_id}: {e}")
         return None
+
+
+# ✅ Delete properties not in external API
+def delete_removed_properties(external_property_ids):
+    """
+    Delete local properties that no longer exist in the external API.
+    """
+    local_property_ids = set(Property.objects.values_list("id", flat=True))
+    external_property_ids_set = set(external_property_ids)
+
+    to_delete_ids = local_property_ids - external_property_ids_set
+    if to_delete_ids:
+        log.info(f"🗑 Deleting {len(to_delete_ids)} properties no longer present in API.")
+        batch_size = 100
+        to_delete_ids = list(to_delete_ids)
+        for i in range(0, len(to_delete_ids), batch_size):
+            batch = to_delete_ids[i:i + batch_size]
+            Property.objects.filter(id__in=batch).delete()
+        log.info("✅ Deleted all missing properties.")
+    else:
+        log.info("✅ No properties to delete. All local properties exist in API.")
+
 
 # ✅ Sync grouped apartments
 def sync_grouped_apartments(prop, external_grouped_apartments):
@@ -160,6 +187,7 @@ def sync_grouped_apartments(prop, external_grouped_apartments):
             min_area=normalized.get("min_area", 0.0),
         )
 
+
 # ✅ Sync property images
 def sync_property_images(prop, external_images):
     PropertyImage.objects.filter(property=prop).delete()
@@ -171,6 +199,7 @@ def sync_property_images(prop, external_images):
             created_at=date_parser.parse(img_data.get("created_at")) if img_data.get("created_at") else None,
             updated_at=date_parser.parse(img_data.get("updated_at")) if img_data.get("updated_at") else None,
         )
+
 
 # ✅ Sync property units
 def sync_property_units(prop, external_units):
@@ -225,6 +254,8 @@ def sync_property_units(prop, external_units):
         log.info(f"🗑 Deleting {len(units_to_delete)} units no longer present in API for Property {prop.id}")
         PropertyUnit.objects.filter(id__in=units_to_delete).delete()
 
+
+# ✅ Sync payment plans
 def sync_payment_plans(prop, external_payment_plans):
     prop.payment_plans.all().delete()
     for plan in external_payment_plans:
@@ -240,6 +271,7 @@ def sync_payment_plans(prop, external_payment_plans):
                 value=value.get("value", ""),
             )
 
+
 # ✅ Sync facilities
 def sync_facilities(prop, external_facilities):
     prop.facilities.clear()
@@ -247,6 +279,7 @@ def sync_facilities(prop, external_facilities):
         facility = upsert_related_model(Facility, fac_data.get("facility") or fac_data)
         if facility:
             prop.facilities.add(facility)
+
 
 # ✅ Update internal property
 def update_internal_property(internal, external, property_apartments_map):
@@ -291,10 +324,7 @@ def update_internal_property(internal, external, property_apartments_map):
     sync_grouped_apartments(internal, external.get("grouped_apartments", []))
 
     # ✅ Fetch units from map
-    units = external.get("apartment", [])
-    if not units:
-        log.warning(f"⚠️ No units found in /getProperty for '{external.get('title')}'. Checking cached /filter data.")
-        units = property_apartments_map.get(internal.id, [])
+    units = external.get("apartment", []) or property_apartments_map.get(internal.id, [])
 
     sync_property_units(internal, units)
     sync_property_images(internal, external.get("property_images", []))
@@ -308,88 +338,97 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            sync_filters()
-            property_apartments_map = fetch_all_properties_and_apartments()
-            page = 1
-            updated_count = 0
-            created_count = 0
-            unchanged_counter = 0
+            with transaction.atomic():  # 🛡 Wrap in transaction for safety
+                sync_filters()
+                property_apartments_map = fetch_all_properties_and_apartments()
+                page = 1
+                updated_count = 0
+                created_count = 0
+                unchanged_counter = 0
 
-            while True:
-                props = fetch_external_properties(page)
-                if not props:
-                    log.info("✅ No more data.")
-                    break
+                all_external_property_ids = []
 
-                for summary in props:
-                    prop_id = summary.get("id")
-                    if not prop_id:
-                        log.error(f"❌ Missing property 'id': {summary}")
-                        continue
+                while True:
+                    props = fetch_external_properties(page)
+                    if not props:
+                        log.info("✅ No more data.")
+                        break
 
-                    full_data = fetch_property_by_id(prop_id)
-                    if not full_data:
-                        continue
+                    # Collect external property IDs for deletion check
+                    external_ids = [p.get("id") for p in props if p.get("id")]
+                    all_external_property_ids.extend(external_ids)
 
-                    try:
-                        internal = Property.objects.get(id=prop_id)
-
-                        # ✅ Check if unchanged
-                        external_updated_at = date_parser.parse(full_data.get("updated_at")) if full_data.get("updated_at") else None
-                        if external_updated_at and internal.updated_at and external_updated_at <= internal.updated_at:
-                            # ✅ Even if property unchanged, check units for updates
-                            log.info(f"🔄 Property ID {prop_id} unchanged. Checking units for changes.")
-
-                            units = full_data.get("apartment", []) or property_apartments_map.get(prop_id, [])
-                            db_units = PropertyUnit.objects.filter(property=internal).values("id", "updated_at")
-
-                            # 🆕 Compare unit counts first
-                            if len(units) != db_units.count():
-                                log.info(f"🆕 Unit count mismatch for property {prop_id}. Syncing units.")
-                                sync_property_units(internal, units)
-                            else:
-                                # 🆕 Compare individual unit updated_at timestamps
-                                unit_changed = False
-                                db_units_map = {u["id"]: u["updated_at"] for u in db_units}
-                                for unit in units:
-                                    unit_id = unit.get("id")
-                                    unit_updated_at = date_parser.parse(unit.get("updated_at")) if unit.get("updated_at") else None
-                                    db_updated_at = db_units_map.get(unit_id)
-
-                                    if unit_updated_at and (not db_updated_at or unit_updated_at > db_updated_at):
-                                        unit_changed = True
-                                        log.info(f"🆕 Unit ID {unit_id} updated. Sync required.")
-                                        break
-
-                                if unit_changed:
-                                    sync_property_units(internal, units)
-                                else:
-                                    log.info(f"✅ No changes in units for property {prop_id}. Skipping unit sync.")
-
-                            unchanged_counter += 1
-                            if unchanged_counter >= 60:
-                                log.info("🚦 60 consecutive unchanged properties found. Stopping sync.")
-                                log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")
-                                return
+                    for summary in props:
+                        prop_id = summary.get("id")
+                        if not prop_id:
+                            log.error(f"❌ Missing property 'id': {summary}")
                             continue
 
+                        full_data = fetch_property_by_id(prop_id)
+                        if not full_data:
+                            continue
 
-                        # ✅ Update property
-                        update_internal_property(internal, full_data, property_apartments_map)
-                        log.info(f"✅ Updated Property ID {prop_id}")
-                        updated_count += 1
-                        unchanged_counter = 0  # Reset
+                        try:
+                            internal = Property.objects.get(id=prop_id)
 
-                    except Property.DoesNotExist:
-                        # ✅ Create new property
-                        new_property = Property(id=prop_id)
-                        update_internal_property(new_property, full_data, property_apartments_map)
-                        log.info(f"➕ Created Property ID {prop_id}")
-                        created_count += 1
-                        unchanged_counter = 0  # Reset
-                page += 1
+                            # ✅ Check if unchanged
+                            external_updated_at = date_parser.parse(full_data.get("updated_at")) if full_data.get("updated_at") else None
+                            if external_updated_at and internal.updated_at and external_updated_at <= internal.updated_at:
+                                # ✅ Even if property unchanged, check units for updates
+                                log.info(f"🔄 Property ID {prop_id} unchanged. Checking units for changes.")
 
-            log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")
+                                units = full_data.get("apartment", []) or property_apartments_map.get(prop_id, [])
+                                db_units = PropertyUnit.objects.filter(property=internal).values("id", "updated_at")
+
+                                # 🆕 Compare unit counts first
+                                if len(units) != db_units.count():
+                                    log.info(f"🆕 Unit count mismatch for property {prop_id}. Syncing units.")
+                                    sync_property_units(internal, units)
+                                else:
+                                    # 🆕 Compare individual unit updated_at timestamps
+                                    unit_changed = False
+                                    db_units_map = {u["id"]: u["updated_at"] for u in db_units}
+                                    for unit in units:
+                                        unit_id = unit.get("id")
+                                        unit_updated_at = date_parser.parse(unit.get("updated_at")) if unit.get("updated_at") else None
+                                        db_updated_at = db_units_map.get(unit_id)
+
+                                        if unit_updated_at and (not db_updated_at or unit_updated_at > db_updated_at):
+                                            unit_changed = True
+                                            log.info(f"🆕 Unit ID {unit_id} updated. Sync required.")
+                                            break
+
+                                    if unit_changed:
+                                        sync_property_units(internal, units)
+                                    else:
+                                        log.info(f"✅ No changes in units for property {prop_id}. Skipping unit sync.")
+
+                                unchanged_counter += 1
+                                if unchanged_counter >= 60:
+                                    log.info("🚦 60 consecutive unchanged properties found. Stopping sync.")
+                                    log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")
+                                    return
+                                continue
+
+                            # ✅ Update property
+                            update_internal_property(internal, full_data, property_apartments_map)
+                            log.info(f"✅ Updated Property ID {prop_id}")
+                            updated_count += 1
+                            unchanged_counter = 0  # Reset
+
+                        except Property.DoesNotExist:
+                            # ✅ Create new property
+                            new_property = Property(id=prop_id)
+                            update_internal_property(new_property, full_data, property_apartments_map)
+                            log.info(f"➕ Created Property ID {prop_id}")
+                            created_count += 1
+                            unchanged_counter = 0  # Reset
+                    page += 1
+
+                # 🗑 Delete properties not in external API
+                delete_removed_properties(all_external_property_ids)
+
+                log.info(f"\n📊 Sync Summary → Updated: {updated_count}, Created: {created_count}")
 
         except Exception as e:
             log.error(f"❌ Fatal error during sync: {e}")
