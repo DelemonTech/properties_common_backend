@@ -64,3 +64,6 @@ coverage.xml
 # System files
 *.swp
 *.swo
+
+#Logs
+.log
