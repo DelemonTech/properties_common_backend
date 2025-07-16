@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from api.views import AgentListView
-from django.urls import path
+from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -48,6 +48,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('your_app.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
 
     # Swagger routes
