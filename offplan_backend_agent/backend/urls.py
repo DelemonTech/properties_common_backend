@@ -34,6 +34,8 @@ from api.views.property_city_count import PropertyByStatusView
 from api.views.consultation import ConsultationView
 from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
+from django.conf import settings
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -48,7 +50,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
-    path('admin/', admin.site.urls),
+    # path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
 
@@ -72,3 +74,4 @@ urlpatterns = [
     # path('subscribe/', SubscribeView.as_view(), name='subscribe'),
     # path('developers/', DeveloperListView.as_view(), name='developer-list'),
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

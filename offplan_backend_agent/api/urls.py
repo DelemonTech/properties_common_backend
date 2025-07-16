@@ -15,11 +15,11 @@ from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
 from api.views import AgentListView
 
-router = DefaultRouter()
+# router = DefaultRouter()
 # router.register(r'admin/agents', AdminAgentDetailViewSet, basename='admin-agents')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # path('', include(router.urls)),
     path('agent/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
     path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
     path("properties/", PropertyListView.as_view(), name="property-list"),
