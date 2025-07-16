@@ -32,13 +32,13 @@ jobs:
           sudo systemctl reload nginx
 
           # Frontend deploy (copy pre-built dist)
-          cd ~/offplan_frontend
-          git pull origin main
-          sudo rm -rf /var/www/offplan_frontend/*
-          sudo cp -r dist/* /var/www/offplan_frontend/
-          sudo chown -R www-data:www-data /var/www/offplan_frontend
-          sudo chmod -R 755 /var/www/offplan_frontend
+          # cd ~/offplan_frontend
+          # git pull origin main
+          # sudo rm -rf /var/www/offplan_frontend/*
+          # sudo cp -r dist/* /var/www/offplan_frontend/
+          # sudo chown -R www-data:www-data /var/www/offplan_frontend
+          # sudo chmod -R 755 /var/www/offplan_frontend
 
           # Reload Nginx again to serve updated frontend
-          sudo systemctl reload nginx
+          # sudo systemctl reload nginx
         EOF
