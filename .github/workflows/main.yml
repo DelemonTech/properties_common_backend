@@ -3,7 +3,7 @@ name: 🚀 Deploy to EC2
 on:
   push:
     branches:
-      - main  # Change this if deploying from a different branch
+      - main  # Change if your branch is different
 
 jobs:
   deploy:
@@ -31,11 +31,9 @@ jobs:
           sudo systemctl restart gunicorn
           sudo systemctl reload nginx
 
-          # Frontend deploy
+          # Frontend deploy (copy pre-built dist)
           cd ~/offplan_frontend
           git pull origin main
-          npm install
-          npm run build
           sudo rm -rf /var/www/offplan_frontend/*
           sudo cp -r dist/* /var/www/offplan_frontend/
           sudo chown -R www-data:www-data /var/www/offplan_frontend
