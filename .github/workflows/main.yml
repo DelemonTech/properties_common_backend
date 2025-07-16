@@ -3,7 +3,7 @@ name: 🚀 Deploy to EC2
 on:
   push:
     branches:
-      - main  # change if your branch is different
+      - main  # Change this if deploying from a different branch
 
 jobs:
   deploy:
@@ -21,12 +21,26 @@ jobs:
     - name: 🚀 Deploy to EC2
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          # Backend deploy
           cd ~/offplan_backend/offplan_backend_agent
           git pull origin main
           source venv/bin/activate
           pip install -r requirements.txt
           python manage.py migrate --noinput
           python manage.py collectstatic --noinput
-          sudo systemctl restart yourapp.service
+          sudo systemctl restart gunicorn
+          sudo systemctl reload nginx
+
+          # Frontend deploy
+          cd ~/offplan_frontend
+          git pull origin main
+          npm install
+          npm run build
+          sudo rm -rf /var/www/offplan_frontend/*
+          sudo cp -r dist/* /var/www/offplan_frontend/
+          sudo chown -R www-data:www-data /var/www/offplan_frontend
+          sudo chmod -R 755 /var/www/offplan_frontend
+
+          # Reload Nginx again to serve updated frontend
           sudo systemctl reload nginx
         EOF
