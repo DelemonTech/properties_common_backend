@@ -4,11 +4,9 @@ from api.models import AgentDetails
 from api.serializers import AgentDetailSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
-from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
 from rest_framework.permissions import IsAuthenticated
 
 class AgentListView(APIView):
-    permission_classes = [IsAdminFromAuthService]
     def get(self, request):
         agents = AgentDetails.objects.order_by('id')
         

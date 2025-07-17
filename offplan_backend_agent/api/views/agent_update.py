@@ -1,7 +1,6 @@
 from rest_framework import generics
 from api.models import AgentDetails
 from api.serializers import AgentDetailSerializer
-from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status

@@ -8,6 +8,10 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import is_naive
 from dateutil import parser as date_parser
 from datetime import datetime
+import calendar
+from typing import Optional, Union
+from django.utils.timezone import now
+
 
 from api.models import (
     City, District, DeveloperCompany, PropertyType, PropertyStatus, SalesStatus,
@@ -26,17 +30,27 @@ HEADERS = {
 
 log = logging.getLogger(__name__)
 
-def parse_delivery_date(date_str):
-    """Converts 'MM/YYYY' to UNIX timestamp for the 1st day of the month"""
-    if not date_str:
-        return None
+# def parse_delivery_date(date_input: Union[str, int, float, None]) -> Optional[int]:
+#     if date_input is None:
+#         return None
+
+#     if isinstance(date_input, (int, float)):
+#         return int(date_input)  # already UNIX timestamp
+
+#     if isinstance(date_input, str):
+#         try:
+#             dt = datetime.strptime(date_input.strip(), "%m/%Y")
+#             return calendar.timegm(dt.timetuple())
+#         except ValueError:
+#             return None
+
+#     return None
+def convert_mm_yyyy_to_yyyymm(date_str: str) -> Optional[int]:
     try:
-        dt = datetime.strptime(date_str, "%m/%Y")
-        return calendar.timegm(dt.timetuple())  # returns int UNIX timestamp
-    except ValueError:
+        month, year = date_str.strip().split('/')
+        return int(f"{year}{int(month):02d}")
+    except Exception:
         return None
-
-
 class Command(BaseCommand):
     help = "Import and save Estaty properties"
 
@@ -57,6 +71,7 @@ class Command(BaseCommand):
 
                 detail = self.fetch_property_details(prop_id)
                 if detail:
+                    print(f"📦 Fetched property ID: {prop_id} - {detail.get('title', 'No Title')}")
                     self.save_property_to_db(detail)
                     total_imported += 1
 
@@ -86,12 +101,23 @@ class Command(BaseCommand):
             return None
 
     def save_property_to_db(self, data):
+        if not data.get("id") or not data.get("title"):
+            print(f"Skipping invalid property data: {data}")
+            return
         # Related objects
         
 
         developer_data = data.get("developer_company") or {}
         developer_name = developer_data.get("name", "Unknown")
-        developer, _ = DeveloperCompany.objects.get_or_create(name=developer_name)
+        developer_id = developer_data.get("id")
+
+        if developer_id:
+            developer, _ = DeveloperCompany.objects.update_or_create(
+                id=developer_id,
+                defaults={"name": developer_name}
+            )
+        else:
+            developer, _ = DeveloperCompany.objects.get_or_create(name=developer_name)
 
         city_data = data.get("city") or {}
         city_name = city_data.get("name", "Unknown")
@@ -105,7 +131,7 @@ class Command(BaseCommand):
         prop_status, _ = PropertyStatus.objects.get_or_create(name=data.get("property_status", {}).get("name", "Unknown"))
         sales_status, _ = SalesStatus.objects.get_or_create(name=data.get("sales_status", {}).get("name", "Unknown"))
 
-        updated_at_raw = parse_datetime(data.get("updated_at")) if data.get("updated_at") else datetime.datetime.now()
+        updated_at_raw = parse_datetime(data.get("updated_at")) or now()
         updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
         # Property
         prop, _ = Property.objects.update_or_create(
@@ -116,7 +142,7 @@ class Command(BaseCommand):
                 "cover": data.get("cover"),
                 "address": data.get("address"),
                 "address_text": data.get("address_text"),
-                "delivery_date": parse_delivery_date(data.get("delivery_date")),
+                "delivery_date": convert_mm_yyyy_to_yyyymm(data.get("delivery_date")),
                 "city": city,
                 "district": district,
                 "developer": developer,
