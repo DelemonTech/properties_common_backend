@@ -1,8 +1,6 @@
 from rest_framework import generics
 from api.models import AgentDetails
 from api.serializers import AgentDetailSerializer
-from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,7 +10,6 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 class AgentUpdateView(APIView):
-    permission_classes = [IsAdminFromAuthService]
 
     @swagger_auto_schema(request_body=AgentDetailSerializer)
     def put(self, request, id):

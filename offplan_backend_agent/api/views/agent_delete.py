@@ -1,13 +1,11 @@
 from rest_framework import generics
 from api.models import AgentDetails
 from api.serializers import AgentDetailSerializer
-from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 class AgentDeleteView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminFromAuthService]
 
     def delete(self, request, id):
         try:

@@ -20,7 +20,9 @@ FILTERS_URL = "https://panel.estaty.app/api/v1/getFilters"
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 SINGLE_PROPERTY_URL = "https://panel.estaty.app/api/v1/getProperty"
 FILTER_PROPERTIES_URL = "https://panel.estaty.app/api/v1/filter"
-API_KEY = os.getenv("ESTATY_API_KEY")
+# API_KEY = os.getenv("ESTATY_API_KEY")
+API_KEY = "27b84afeeef929815ab080ae22b29383"
+
 
 if not API_KEY:
     raise RuntimeError("❌ Missing ESTATY_API_KEY in Django settings.")

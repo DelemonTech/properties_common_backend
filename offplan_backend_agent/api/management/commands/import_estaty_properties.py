@@ -1,0 +1,214 @@
+import requests
+import logging
+import datetime
+import calendar
+from django.utils.timezone import make_aware
+from django.utils.dateparse import parse_datetime
+from django.core.management.base import BaseCommand
+from django.utils.timezone import is_naive
+from dateutil import parser as date_parser
+from datetime import datetime
+import calendar
+from typing import Optional, Union
+from django.utils.timezone import now
+
+
+from api.models import (
+    City, District, DeveloperCompany, PropertyType, PropertyStatus, SalesStatus,
+    Facility, Property, GroupedApartment, PropertyUnit, PropertyImage,
+    PaymentPlan, PaymentPlanValue, PropertyFacility
+)
+
+# Constants
+API_KEY = "27b84afeeef929815ab080ae22b29383"
+LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
+DETAIL_URL = "https://panel.estaty.app/api/v1/getProperty"
+HEADERS = {
+    "App-key": API_KEY,
+    "Content-Type": "application/json",
+}
+
+log = logging.getLogger(__name__)
+
+# def parse_delivery_date(date_input: Union[str, int, float, None]) -> Optional[int]:
+#     if date_input is None:
+#         return None
+
+#     if isinstance(date_input, (int, float)):
+#         return int(date_input)  # already UNIX timestamp
+
+#     if isinstance(date_input, str):
+#         try:
+#             dt = datetime.strptime(date_input.strip(), "%m/%Y")
+#             return calendar.timegm(dt.timetuple())
+#         except ValueError:
+#             return None
+
+#     return None
+def convert_mm_yyyy_to_yyyymm(date_str: str) -> Optional[int]:
+    try:
+        month, year = date_str.strip().split('/')
+        return int(f"{year}{int(month):02d}")
+    except Exception:
+        return None
+class Command(BaseCommand):
+    help = "Import and save Estaty properties"
+
+    def handle(self, *args, **options):
+        self.stdout.write(self.style.SUCCESS("✅ Starting Estaty property import..."))
+        page = 1
+        total_imported = 0
+
+        while True:
+            properties = self.fetch_property_ids(page)
+            if not properties:
+                break
+
+            for prop in properties:
+                prop_id = prop.get("id")
+                if not prop_id:
+                    continue
+
+                detail = self.fetch_property_details(prop_id)
+                if detail:
+                    print(f"📦 Fetched property ID: {prop_id} - {detail.get('title', 'No Title')}")
+                    self.save_property_to_db(detail)
+                    total_imported += 1
+
+            page += 1
+
+        self.stdout.write(self.style.SUCCESS(f"🏁 Done! Total properties saved: {total_imported}"))
+
+
+    def fetch_property_ids(self, page=1):
+        try:
+            url = f"{LISTING_URL}?page={page}" if page > 1 else LISTING_URL
+            response = requests.post(url, headers=HEADERS, json={})
+            response.raise_for_status()
+            data = response.json()
+            return data.get("properties", {}).get("data", [])
+        except Exception as e:
+            log.error(f"❌ Error fetching property list (page {page}): {e}")
+            return []
+
+    def fetch_property_details(self, prop_id):
+        try:
+            response = requests.post(DETAIL_URL, headers=HEADERS, json={"id": prop_id})
+            response.raise_for_status()
+            return response.json().get("property")
+        except Exception as e:
+            log.error(f"❌ Error fetching details for ID {prop_id}: {e}")
+            return None
+
+    def save_property_to_db(self, data):
+        if not data.get("id") or not data.get("title"):
+            print(f"Skipping invalid property data: {data}")
+            return
+        # Related objects
+        
+
+        developer_data = data.get("developer_company") or {}
+        developer_name = developer_data.get("name", "Unknown")
+        developer_id = developer_data.get("id")
+
+        if developer_id:
+            developer, _ = DeveloperCompany.objects.update_or_create(
+                id=developer_id,
+                defaults={"name": developer_name}
+            )
+        else:
+            developer, _ = DeveloperCompany.objects.get_or_create(name=developer_name)
+
+        city_data = data.get("city") or {}
+        city_name = city_data.get("name", "Unknown")
+        city, _ = City.objects.get_or_create(name=city_name)
+
+        district_data = data.get("district") or {}
+        district_name = district_data.get("name", "Unknown")
+        district, _ = District.objects.get_or_create(name=district_name, city=city)
+
+        prop_type, _ = PropertyType.objects.get_or_create(name=data.get("property_type", {}).get("name", "Unknown"))
+        prop_status, _ = PropertyStatus.objects.get_or_create(name=data.get("property_status", {}).get("name", "Unknown"))
+        sales_status, _ = SalesStatus.objects.get_or_create(name=data.get("sales_status", {}).get("name", "Unknown"))
+
+        updated_at_raw = parse_datetime(data.get("updated_at")) or now()
+        updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
+        # Property
+        prop, _ = Property.objects.update_or_create(
+            id=data["id"],
+            defaults={
+                "title": data.get("title"),
+                "description": data.get("description") or "",
+                "cover": data.get("cover"),
+                "address": data.get("address"),
+                "address_text": data.get("address_text"),
+                "delivery_date": convert_mm_yyyy_to_yyyymm(data.get("delivery_date")),
+                "city": city,
+                "district": district,
+                "developer": developer,
+                "property_type": prop_type,
+                "property_status": prop_status,
+                "sales_status": sales_status,
+                "completion_rate": data.get("completion_rate") or 0,
+                "residential_units": data.get("residential_units") or 0,
+                "commercial_units": data.get("commercial_units") or 0,
+                "payment_plan": data.get("payment_plan") or 0,
+                "post_delivery": data.get("post_delivery") == 1,
+                "payment_minimum_down_payment": data.get("payment_minimum_down_payment") or 0,
+                "guarantee_rental_guarantee": data.get("guarantee_rental_guarantee") == 1,
+                "guarantee_rental_guarantee_value": data.get("guarantee_rental_guarantee_value") or 0,
+                "downPayment": data.get("downPayment") or 0,
+                "low_price": data.get("low_price") or 0,
+                "min_area": data.get("min_area") or 0,
+                "updated_at": updated_at
+            }
+        )
+
+        # Facilities
+        prop.facilities.clear()
+        for f in data.get("property_facilities", []):
+            f_data = f.get("facility", {})
+            if not f_data:
+                continue
+            facility_obj, _ = Facility.objects.get_or_create(
+                id=f_data["id"],
+                defaults={"name": f_data["name"]}
+            )
+            prop.facilities.add(facility_obj)
+
+        # Grouped Apartments
+        prop.grouped_apartments.all().delete()
+        for g in data.get("grouped_apartments") or []:
+            GroupedApartment.objects.create(
+                property=prop,
+                unit_type=g.get("Unit_Type", ""),
+                rooms=g.get("Rooms", ""),
+                min_price=g.get("min_price"),
+                min_area=g.get("min_area")
+            )
+
+        # Images
+        prop.property_images.all().delete()
+        for img in data.get("property_images") or []:
+            PropertyImage.objects.create(
+                property=prop,
+                image=img.get("image"),
+                type=img.get("type", 2),
+                created_at = make_aware(datetime.now())
+            )
+
+        # Payment Plans
+        prop.payment_plans.all().delete()
+        for plan in data.get("payment_plans") or []:
+            pp = PaymentPlan.objects.create(
+                property=prop,
+                name=plan.get("name"),
+                description=plan.get("description") or ""  # FIXED
+            )
+            for val in plan.get("values", []):
+                PaymentPlanValue.objects.create(
+                    property_payment_plan=pp,
+                    name=val.get("name"),
+                    value=val.get("value")
+                )
+        

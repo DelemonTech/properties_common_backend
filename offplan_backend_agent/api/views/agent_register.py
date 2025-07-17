@@ -1,7 +1,7 @@
 from rest_framework import generics
 from api.models import AgentDetails
 from api.serializers import AgentDetailSerializer
-from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
+# from api.permissions.is_admin_from_other_service import IsAdminFromAuthService
 from rest_framework.response import Response  # ✅ Add this
 from rest_framework import status  # ✅ Add this
 
@@ -9,7 +9,7 @@ from rest_framework import status  # ✅ Add this
 class AgentRegisterView(generics.CreateAPIView):
     queryset = AgentDetails.objects.all()
     serializer_class = AgentDetailSerializer
-    permission_classes = [IsAdminFromAuthService]
+    # permission_classes = [IsAdminFromAuthService]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
