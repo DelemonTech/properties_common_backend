@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from api.views import AgentListView
-from django.urls import path
+from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -34,6 +34,8 @@ from api.views.property_city_count import PropertyByStatusView
 from api.views.consultation import ConsultationView
 from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
+from django.conf import settings
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -47,26 +49,29 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
+    # path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
 
     # Swagger routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('agent/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
-    path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
-    path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
-    path("properties/", PropertyListView.as_view(), name="property-list"),
-    path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
-    path("cities/", CityListView.as_view(), name="city-list"),
-    path('register/', AgentRegisterView.as_view(), name='register-agent'),
-    path('agent/update/<int:id>/', AgentUpdateView.as_view(), name='agent-update'),
-    path('agent/delete/<int:id>/', AgentDeleteView.as_view(), name='agent-delete'),
-    path('agents/list/', AgentListView.as_view(), name='agent-list'),
-    path('properties/status-counts/', PropertyStatusCountView.as_view(), name='property-status-counts'),
-    path('properties/city/count/', PropertyByStatusView.as_view(), name='property-city-wise-count'),
-    path('consultation',ConsultationView.as_view(),name='consultation_details'),
-    path('subscribe/', SubscribeView.as_view(), name='subscribe'),
-    path('developers/', DeveloperListView.as_view(), name='developer-list'),
+    # path('agent/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
+    # path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
+    # path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
+    # path("properties/", PropertyListView.as_view(), name="property-list"),
+    # path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
+    # path("cities/", CityListView.as_view(), name="city-list"),
+    # path('register/', AgentRegisterView.as_view(), name='register-agent'),
+    # path('agent/update/<int:id>/', AgentUpdateView.as_view(), name='agent-update'),
+    # path('agent/delete/<int:id>/', AgentDeleteView.as_view(), name='agent-delete'),
+    # path('agents/list/', AgentListView.as_view(), name='agent-list'),
+    # path('properties/status-counts/', PropertyStatusCountView.as_view(), name='property-status-counts'),
+    # path('properties/city/count/', PropertyByStatusView.as_view(), name='property-city-wise-count'),
+    # path('consultation',ConsultationView.as_view(),name='consultation_details'),
+    # path('subscribe/', SubscribeView.as_view(), name='subscribe'),
+    # path('developers/', DeveloperListView.as_view(), name='developer-list'),
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

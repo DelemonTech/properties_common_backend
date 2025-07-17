@@ -18,9 +18,7 @@ log = logging.getLogger("django")
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 SINGLE_PROPERTY_URL = "https://panel.estaty.app/api/v1/getProperty"
 FILTER_PROPERTY_URL = "https://panel.estaty.app/api/v1/filter"
-# API_KEY = os.getenv("ESTATY_API_KEY")
-API_KEY =  "27b84afeeef929815ab080ae22b29383"
-
+API_KEY = os.getenv("ESTATY_API_KEY")
 
 if not API_KEY:
     raise RuntimeError("❌ Missing ESTATY_API_KEY in environment variables.")
