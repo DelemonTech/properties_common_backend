@@ -6,7 +6,7 @@ import requests
 
 # Detect crawlers using User-Agent
 CRAWLER_USER_AGENTS = re.compile(
-    r"googlebot|bingbot|yandex|duckduckbot|baiduspider|facebook|twitterbot|linkedinbot",
+    r"googlebot|bingbot|yandex|duckduckbot|baiduspider|facebook|twitterbot|linkedinbot|whatsapp|telegrambot|slackbot|redditbot|quora link preview|pinterest|tumblr|vkbot",
     re.I
 )
 
