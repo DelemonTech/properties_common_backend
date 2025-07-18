@@ -19,7 +19,7 @@ def agent_meta_view(request, username):
         meta_data = cache.get(cache_key)
 
         if not meta_data:
-            api_url = f"http://127.0.0.1:8000/api/agent/{username}/"
+            api_url = f"https://offplan.market/api/agent/{username}/"
             try:
                 response = requests.get(api_url, timeout=5)
                 if response.status_code == 200 and response.json().get("status"):
