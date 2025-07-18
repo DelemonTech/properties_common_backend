@@ -27,7 +27,7 @@ def agent_meta_view(request, username):
                     meta_data = {
                         "title": f"{agent['name']} | Offplan Expert – Offplan.Market",
                         "description": agent.get('bio', f"Explore premium off-plan projects with {agent['name']}. Click to view listings & contact now."),
-                        "image": ("/lovable-uploads/93c61de1-b334-4926-a59a-2934c6cb5135.png"),
+                        "image": ("https://offplan.market/lovable-uploads/93c61de1-b334-4926-a59a-2934c6cb5135.png"),
                         "url": request.build_absolute_uri(),
                     }
                     # Cache for 5 minutes
