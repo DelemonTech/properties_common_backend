@@ -36,6 +36,8 @@ from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import re_path
+from api.views.meta_view import agent_meta_view
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -53,6 +55,7 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
+    re_path(r'^(?P<username>[\w-]+)/$', agent_meta_view),
 
     # Swagger routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
