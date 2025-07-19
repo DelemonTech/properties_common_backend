@@ -122,24 +122,35 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # }
 
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
+    }
+}
+
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / "db.sqlite3",
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'postgres.xtzdmalumstpitlmiscl',
+#         'PASSWORD': 'D3l3m0n@2025',
+#         'HOST': 'aws-0-ap-south-1.pooler.supabase.com',
+#         'PORT': '5432',
+        
 #     }
 # }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.xtzdmalumstpitlmiscl',
-        'PASSWORD': 'D3l3m0n@2025',
-        'HOST': 'aws-0-ap-south-1.pooler.supabase.com',
-        'PORT': '5432',
-        
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'offplan_market',
+#         'USER': 'postgres',
+#         'PASSWORD': 'postgre_db',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # 👈 Prevents Django login for Swagger
