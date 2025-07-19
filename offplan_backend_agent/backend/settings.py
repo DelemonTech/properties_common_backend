@@ -36,7 +36,9 @@ ALLOWED_HOSTS = [
     "offplan-backend.onrender.com",  # ✅ Your Render service URL
     "localhost",                     # optional for local dev
     "127.0.0.1",
-    "192.168.1.50"
+    "192.168.1.50",
+    "offplan.market",
+    "www.offplan.market",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -88,7 +90,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'offplan_backend_agent', 'api', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
