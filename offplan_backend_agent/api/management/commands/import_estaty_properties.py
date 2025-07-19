@@ -127,12 +127,22 @@ class Command(BaseCommand):
         district_name = district_data.get("name", "Unknown")
         district, _ = District.objects.get_or_create(name=district_name, city=city)
 
-        prop_type, _ = PropertyType.objects.get_or_create(name=data.get("property_type", {}).get("name", "Unknown"))
-        prop_status, _ = PropertyStatus.objects.get_or_create(name=data.get("property_status", {}).get("name", "Unknown"))
-        sales_status, _ = SalesStatus.objects.get_or_create(name=data.get("sales_status", {}).get("name", "Unknown"))
+        # prop_type, _ = PropertyType.objects.get_or_create(name=data.get("property_type", {}).get("name", "Unknown"))
+        property_type_data = data.get("property_type") or {}
+        prop_type_name = property_type_data.get("name", "Unknown")
+        prop_type, _ = PropertyType.objects.get_or_create(name=prop_type_name)
+        
+        # prop_status, _ = PropertyStatus.objects.get_or_create(name=data.get("property_status", {}).get("name", "Unknown"))
+        prop_status_name = data.get("property_status", {}).get("name", "Unknown")
+        prop_status, _ = PropertyStatus.objects.get_or_create(name=prop_status_name, property_type=prop_type)
 
+        # sales_status, _ = SalesStatus.objects.get_or_create(name=data.get("sales_status", {}).get("name", "Unknown"))
+        sales_status_name = data.get("sales_status", {}).get("name", "Unknown")
+        sales_status, _ = SalesStatus.objects.get_or_create(name=sales_status_name, property_type=prop_type)
+        
         updated_at_raw = parse_datetime(data.get("updated_at")) or now()
         updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
+        
         # Property
         prop, _ = Property.objects.update_or_create(
             id=data["id"],
