@@ -108,51 +108,22 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv("DB_NAME"),
-#         'USER': os.getenv("DB_USER"),
-#         'PASSWORD': os.getenv("DB_PASSWORD"),
-#         'HOST': os.getenv("DB_HOST"),
-#         'PORT': os.getenv("DB_PORT"),
-#         'OPTIONS': {
-#             'options': '-c search_path=public',
-#             'sslmode': 'require'
-#         }
-#     }
-# }
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / "db.sqlite3",
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.xtzdmalumstpitlmiscl',
-        'PASSWORD': 'D3l3m0n@2025',
-        'HOST': 'aws-0-ap-south-1.pooler.supabase.com',
-        'PORT': '5432',
-        
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT"),
+        'OPTIONS': {
+            'options': '-c search_path=public',
+            'sslmode': 'require'
+        }
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'offplan_market',
-#         'USER': 'postgres',
-#         'PASSWORD': 'postgre_db',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # 👈 Prevents Django login for Swagger

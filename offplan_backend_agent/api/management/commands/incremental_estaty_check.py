@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
         if any_changed:
             print("🔁 Changes detected. Running full sync from page 1...")
-            call_command("import_estaty_properties")  # Replace with your actual command name
+            call_command("import_estaty_properties")  
         else:
             print("✅ No changes detected in last 60 properties.")
 
