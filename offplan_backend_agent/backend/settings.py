@@ -143,6 +143,17 @@ DATABASES = {
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'offplan_market',
+#         'USER': 'postgres',
+#         'PASSWORD': 'postgre_db',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
+
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # 👈 Prevents Django login for Swagger
 }
