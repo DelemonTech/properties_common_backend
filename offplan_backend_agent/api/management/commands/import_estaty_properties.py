@@ -16,11 +16,12 @@ from api.models import (
     PaymentPlan, PaymentPlanValue
 )
 
-# Constants
 API_KEY = "27b84afeeef929815ab080ae22b29383"
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 DETAIL_URL = "https://panel.estaty.app/api/v1/getProperty"
 FILTER_URL = "https://estaty.app/api/v1/filter"
+FILTERS_URL = "https://panel.estaty.app/api/v1/getFilters"
+
 HEADERS = {
     "App-key": API_KEY,
     "Content-Type": "application/json",
@@ -39,6 +40,9 @@ class Command(BaseCommand):
     help = "Import and save Estaty properties"
 
     def handle(self, *args, **options):
+        self.stdout.write(self.style.SUCCESS("🔄 Syncing filter data from Estaty..."))
+        self.sync_filters_from_estaty()
+
         self.stdout.write(self.style.SUCCESS("✅ Starting Estaty property import..."))
         page = 1
         total_imported = 0
@@ -53,25 +57,119 @@ class Command(BaseCommand):
                 prop_id = prop.get("id")
                 if not prop_id:
                     continue
-                
+
                 estaty_ids.add(prop_id)
                 detail = self.fetch_property_details(prop_id)
                 if detail:
                     print(f"📦 Fetched property ID: {prop_id} - {detail.get('title', 'No Title')}")
                     self.save_property_to_db(detail)
-
-            
                 total_imported += 1
             page += 1
+
         self.delete_removed_properties(estaty_ids)
-        self.stdout.write(self.style.SUCCESS(f"🏁 Done! Total properties saved: {total_imported}"))
+        self.stdout.write(self.style.SUCCESS(f"🏑 Done! Total properties saved: {total_imported}"))
+
         try:
             self.stdout.write(self.style.SUCCESS("🚀 Starting Property Unit import..."))
             call_command("import_property_unit")
             self.stdout.write(self.style.SUCCESS("✅ Property Unit import completed successfully."))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"❌ Failed to import property units: {str(e)}"))
-            
+
+# --------------- FETCHING ALL FILTERS BY /getFilters ENDPOINT -----------------------
+
+    def sync_filters_from_estaty(self):
+        try:
+            response = requests.post(FILTERS_URL, headers=HEADERS)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            log.error(f"❌ Failed to fetch filter data: {e}")
+            return
+
+        # Cities
+        api_ids = set()
+        for city in data.get("cites", []):
+            api_ids.add(city["id"])
+            City.objects.update_or_create(
+                id=city["id"],
+                defaults={"name": city["name"]}
+            )
+        City.objects.exclude(id__in=api_ids).delete()
+
+        # Districts
+        api_ids = set()
+        cities_by_id = {c.id: c for c in City.objects.all()}
+        for district in data.get("districts", []):
+            district_id = district.get("id")
+            name = district.get("name", "Unknown")
+            city_id = district.get("city_id")
+            city_obj = cities_by_id.get(city_id)
+
+            api_ids.add(district_id)
+
+            try:
+                obj = District.objects.get(id=district_id)
+                obj.name = name
+                obj.city = city_obj
+                obj.save()
+            except District.DoesNotExist:
+                District.objects.create(id=district_id, name=name, city=city_obj)
+        District.objects.exclude(id__in=api_ids).delete()
+
+        # Developer Companies
+        api_ids = set()
+        for dev in data.get("developer_companies", []):
+            api_ids.add(dev["id"])
+            DeveloperCompany.objects.update_or_create(
+                id=dev["id"],
+                defaults={"name": dev["name"]}
+            )
+        DeveloperCompany.objects.exclude(id__in=api_ids).delete()
+
+        # Property Types
+        api_ids = set()
+        for ptype in data.get("property_types", []):
+            api_ids.add(ptype["id"])
+            PropertyType.objects.update_or_create(
+                id=ptype["id"],
+                defaults={"name": ptype["name"]}
+            )
+            print(ptype, "ptype")
+        PropertyType.objects.exclude(id__in=api_ids).delete()
+
+        # Property Statuses
+        api_ids = set()
+        for status in data.get("property_statuses", []):
+            api_ids.add(status["id"])
+            PropertyStatus.objects.update_or_create(
+                id=status["id"],
+                defaults={"name": status["name"]}
+            )
+        PropertyStatus.objects.exclude(id__in=api_ids).delete()
+
+        # Sales Statuses
+        api_ids = set()
+        for status in data.get("sales_statuses", []):
+            api_ids.add(status["id"])
+            SalesStatus.objects.update_or_create(
+                id=status["id"],
+                defaults={"name": status["name"]}
+            )
+        SalesStatus.objects.exclude(id__in=api_ids).delete()
+
+        # Facilities
+        api_ids = set()
+        for facility in data.get("facilities", []):
+            api_ids.add(facility["id"])
+            Facility.objects.update_or_create(
+                id=facility["id"],
+                defaults={"name": facility["name"]}
+            )
+        Facility.objects.exclude(id__in=api_ids).delete()
+
+        self.stdout.write(self.style.SUCCESS("✅ Filters synced from Estaty"))
+
 # --------------- FETCHING ALL PROPETIES BY /getProperties ENDPOINT -----------------------
 
     def fetch_property_ids(self, page=1):
@@ -117,38 +215,46 @@ class Command(BaseCommand):
 # --------------- SAVING PROPERTIES AND ITS DETAILS TO DATABASE -----------------------
 
     def save_property_to_db(self, data):
-        """Save property and related information to the database"""
         if not data.get("id") or not data.get("title"):
             log.warning(f"⚠️ Skipping invalid property data: {data}")
             return None
 
-        developer_data = data.get("developer_company") or {}
-        developer_name = developer_data.get("name", "Unknown")
-        developer_id = developer_data.get("id")
+        # --- (only by ID) ---
+        developer_id = (data.get("developer_company") or {}).get("id")
+        print(developer_id,'dev')
+        city_id = (data.get("city") or {}).get("id")
+        print(city_id,'city')
+        district_id = (data.get("district") or {}).get("id")
+        print(district_id,'dist')
+        property_type_id = (data.get("property_type") or {}).get("id")
+        print(property_type_id,'type')
+        property_status_id = (data.get("property_status") or {}).get("id")
+        print(property_status_id,'status')
+        sales_status_id = (data.get("sales_status") or {}).get("id")
+        print(sales_status_id,'sales')
 
-        if developer_id:
-            developer, _ = DeveloperCompany.objects.update_or_create(
-                id=developer_id,
-                defaults={"name": developer_name}
-            )
-        else:
-            developer, _ = DeveloperCompany.objects.get_or_create(name=developer_name)
-
-        city, _ = City.objects.get_or_create(name=(data.get("city") or {}).get("name", "Unknown"))
-        district, _ = District.objects.get_or_create(
-            name=(data.get("district") or {}).get("name", "Unknown"),
-            city=city
-        )
-        prop_type, _ = PropertyType.objects.get_or_create(
-            name=(data.get("property_type") or {}).get("name", "Unknown")
-        )
-        prop_status, _ = PropertyStatus.objects.get_or_create(
-            name=(data.get("property_status") or {}).get("name", "Unknown")
-        )
-        sales_status, _ = SalesStatus.objects.get_or_create(
-            name=(data.get("sales_status") or {}).get("name", "Unknown")
-        )
+        developer = DeveloperCompany.objects.filter(id=developer_id).first()
+        city = City.objects.filter(id=city_id).first()
+        district = District.objects.filter(id=district_id).first()
+        prop_type = PropertyType.objects.filter(id=property_type_id).first()
+        prop_status = PropertyStatus.objects.filter(id=property_status_id).first()
+        sales_status = SalesStatus.objects.filter(id=sales_status_id).first()
         
+        if not developer:
+            log.warning(f"❌ Missing developer with ID {developer_id}")
+        if not city:
+            log.warning(f"❌ Missing city with ID {city_id}")
+        if not district:
+            log.warning(f"❌ Missing district with ID {district_id}")
+        if not prop_type:
+            log.warning(f"❌ Missing property type with ID {property_type_id}")
+        if not prop_status:
+            log.warning(f"❌ Missing property status with ID {property_status_id}")
+        if not sales_status:
+            log.warning(f"❌ Missing sales status with ID {sales_status_id}")
+
+        
+
         updated_at_raw = parse_datetime(data.get("updated_at")) or now()
         updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
 
@@ -183,55 +289,50 @@ class Command(BaseCommand):
                 }
             )
 
-        
-        # Facilities
-        prop.facilities.clear()
-        for f in data.get("property_facilities", []):
-            f_data = f.get("facility", {})
-            if not f_data:
-                continue
-            facility_obj, _ = Facility.objects.get_or_create(
-                id=f_data["id"],
-                defaults={"name": f_data["name"]}
-            )
-            prop.facilities.add(facility_obj)
+            # Facilities (safe get by ID only)
+            prop.facilities.clear()
+            for f in data.get("property_facilities", []):
+                f_data = f.get("facility", {})
+                f_id = f_data.get("id")
+                if f_id:
+                    facility = Facility.objects.filter(id=f_id).first()
+                    if facility:
+                        prop.facilities.add(facility)
 
-        # Grouped Apartments
-        prop.grouped_apartments.all().delete()
-        for g in data.get("grouped_apartments") or []:
-            GroupedApartment.objects.create(
-                property=prop,
-                unit_type=g.get("Unit_Type", ""),
-                rooms=g.get("Rooms", ""),
-                min_price=g.get("min_price"),
-                min_area=g.get("min_area")
-            )
-
-        # Images
-        prop.property_images.all().delete()
-        for img in data.get("property_images") or []:
-            PropertyImage.objects.create(
-                property=prop,
-                image=img.get("image"),
-                type=img.get("type", 2),
-                created_at=make_aware(datetime.now())
-            )
-
-        # Payment Plans
-        prop.payment_plans.all().delete()
-        for plan in data.get("payment_plans") or []:
-            pp = PaymentPlan.objects.create(
-                property=prop,
-                name=plan.get("name"),
-                description=plan.get("description") or ""
-            )
-            for val in plan.get("values", []):
-                PaymentPlanValue.objects.create(
-                    property_payment_plan=pp,
-                    name=val.get("name"),
-                    value=val.get("value")
+            # Grouped Apartments
+            prop.grouped_apartments.all().delete()
+            for g in data.get("grouped_apartments") or []:
+                GroupedApartment.objects.create(
+                    property=prop,
+                    unit_type=g.get("Unit_Type", ""),
+                    rooms=g.get("Rooms", ""),
+                    min_price=g.get("min_price"),
+                    min_area=g.get("min_area")
                 )
 
-        return prop
+            # Images
+            prop.property_images.all().delete()
+            for img in data.get("property_images") or []:
+                PropertyImage.objects.create(
+                    property=prop,
+                    image=img.get("image"),
+                    type=img.get("type", 2),
+                    created_at=make_aware(datetime.now())
+                )
 
-        
+            # Payment Plans
+            prop.payment_plans.all().delete()
+            for plan in data.get("payment_plans") or []:
+                pp = PaymentPlan.objects.create(
+                    property=prop,
+                    name=plan.get("name"),
+                    description=plan.get("description") or ""
+                )
+                for val in plan.get("values", []):
+                    PaymentPlanValue.objects.create(
+                        property_payment_plan=pp,
+                        name=val.get("name"),
+                        value=val.get("value")
+                    )
+
+        return prop
