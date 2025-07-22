@@ -103,13 +103,18 @@ class Command(BaseCommand):
             if not unit_id:
                 continue
 
-            # Safely parse floor_plan_image JSON field
+            # Safely parse and clean floor_plan_image JSON field
             floor_plan_raw = unit_data.get("floor_plan_image")
-            try:
-                floor_plan_image = json.loads(floor_plan_raw) if floor_plan_raw else []
-            except json.JSONDecodeError:
-                floor_plan_image = []
-                log.warning(f"⚠️ Invalid JSON for unit {unit_id} floor_plan_image, using empty list.")
+            floor_plan_image = ""
+            if floor_plan_raw:
+                try:
+                    parsed_images = json.loads(floor_plan_raw)
+                    if isinstance(parsed_images, list) and parsed_images:
+                        # Clean and normalize the first image URL
+                        floor_plan_image = parsed_images[0].replace("\\/", "/")
+                except json.JSONDecodeError:
+                    floor_plan_image = ""
+                    log.warning(f"⚠️ Invalid JSON for unit {unit_id} floor_plan_image, using empty string.")
 
             try:
                 unit, created = PropertyUnit.objects.update_or_create(
@@ -130,5 +135,7 @@ class Command(BaseCommand):
                 )
                 saved += 1
             except Exception as e:
-                log.error(f"❌ Error saving unit {unit_id}: {e}")
+                log.error(f"❌ Failed to save unit {unit_id}: {str(e)}")
+
+        log.info(f"✅ Saved {saved} apartment units.")        
         return saved

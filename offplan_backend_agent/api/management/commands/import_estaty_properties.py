@@ -55,7 +55,6 @@ class Command(BaseCommand):
                     continue
                 
                 estaty_ids.add(prop_id)
-                print('set id',estaty_ids)
                 detail = self.fetch_property_details(prop_id)
                 if detail:
                     print(f"📦 Fetched property ID: {prop_id} - {detail.get('title', 'No Title')}")
@@ -103,13 +102,18 @@ class Command(BaseCommand):
 
     def delete_removed_properties(self, estaty_ids: set):
         local_ids = set(Property.objects.values_list("id", flat=True))
-        to_delete = local_ids - estaty_ids
-        if to_delete:
-            deleted_count, _ = Property.objects.filter(id__in=to_delete).delete()
-            self.stdout.write(self.style.WARNING(f"🗑 Deleted {deleted_count} missing properties from DB"))
+        to_delete_ids = local_ids - estaty_ids
+
+        if to_delete_ids:
+            for prop in Property.objects.filter(id__in=to_delete_ids):
+                self.stdout.write(self.style.WARNING(f"🗑 Deleting property {prop.id} and its related units..."))
+                PropertyUnit.objects.filter(property=prop).delete()
+                prop.delete()
+
+            self.stdout.write(self.style.WARNING(f"🗑 Deleted {len(to_delete_ids)} missing properties from DB"))
         else:
             self.stdout.write(self.style.SUCCESS("✅ No properties deleted. DB is in sync."))
-            
+                
 # --------------- SAVING PROPERTIES AND ITS DETAILS TO DATABASE -----------------------
 
     def save_property_to_db(self, data):
