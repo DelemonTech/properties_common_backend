@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import AgentDetails, Property
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact
 from django.db.models import Sum
 
 class CitySerializerWithDistricts(serializers.ModelSerializer):
@@ -40,6 +40,7 @@ class PropertySerializer(serializers.ModelSerializer):
             "delivery_date", "min_area", "low_price",
             "property_type", "property_status", "sales_status",
             "updated_at", "city", "district", "developer","subunit_count",
+            "arabic_title","arabic_desc","farsi_title","farsi_desc",
         ]
     
     def get_subunit_count(self, obj):
@@ -72,3 +73,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ['email']
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= Contact
+        fields = '__all__'
