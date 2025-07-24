@@ -14,13 +14,13 @@ class CitySerializerWithDistricts(serializers.ModelSerializer):
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
-        fields = ["id", "name"]
+        fields = ["id", "name","farsi_city_name","arabic_city_name"]
 
 class DistrictSerializer(serializers.ModelSerializer):
     city = CitySerializer()
     class Meta:
         model = District
-        fields = ["id", "name", "city"]
+        fields = ["id", "name", "city", "farsi_dist_name", "arabic_dist_name"]
 
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:

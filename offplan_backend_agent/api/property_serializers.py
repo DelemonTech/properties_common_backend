@@ -108,7 +108,8 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             'guarantee_rental_guarantee', 'guarantee_rental_guarantee_value',
             'city', 'district', 'developer', 'property_type', 'property_status',
             'sales_status', 'property_images', 'facilities',
-            'grouped_apartments', 'payment_plans', 'property_units'  # ✅ Include here
+            'grouped_apartments', 'payment_plans', 'property_units',
+            'arabic_title','arabic_desc','farsi_title','farsi_desc'# ✅ Include here
         ]
 
 
@@ -144,6 +145,10 @@ class PropertySerializer(serializers.ModelSerializer):
             'city',
             'district',
             'developer',
+            'arabic_title',
+            'arabic_desc',
+            'farsi_title',
+            'farsi_desc',
             'subunit_count',  # ✅ add this in response
         ]
 
