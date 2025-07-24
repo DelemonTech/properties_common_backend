@@ -9,5 +9,8 @@ class ContactEnquiryView(APIView):
         serializer = ContactSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Contact enquiry submitted successfully"}, status=status.HTTP_201_CREATED)
+            return Response({
+                'message': "Contact enquiry submitted successfully",
+                'data':serializer.data,
+                }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
