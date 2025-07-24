@@ -215,9 +215,14 @@ class Command(BaseCommand):
 # --------------- SAVING PROPERTIES AND ITS DETAILS TO DATABASE -----------------------
 
     def save_property_to_db(self, data):
-        if not data.get("id") or not data.get("title"):
-            log.warning(f"⚠️ Skipping invalid property data: {data}")
+        if not data.get("id"):
+            log.warning(f"⚠️ Skipping invalid property (missing ID): {data}")
             return None
+        
+        title = data.get("title") or f"Untitled Property {data['id']}"
+        print(title,'title')
+
+        
 
         # --- (only by ID) ---
         developer_id = (data.get("developer_company") or {}).get("id")
@@ -262,7 +267,7 @@ class Command(BaseCommand):
             prop, _ = Property.objects.update_or_create(
                 id=data["id"],
                 defaults={
-                    "title": data.get("title"),
+                    "title": title,
                     "description": data.get("description") or "",
                     "cover": data.get("cover"),
                     "address": data.get("address"),
