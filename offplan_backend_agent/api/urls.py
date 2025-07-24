@@ -14,6 +14,8 @@ from api.views.consultation import ConsultationView
 from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
 from api.views import AgentListView
+from api.views.contact_enquiry import ContactEnquiryView
+
 
 # router = DefaultRouter()
 # router.register(r'admin/agents', AdminAgentDetailViewSet, basename='admin-agents')
@@ -34,4 +36,5 @@ urlpatterns = [
     path('consultation', ConsultationView.as_view(), name='consultation_details'),
     path('subscribe/', SubscribeView.as_view(), name='subscribe'),
     path('developers/', DeveloperListView.as_view(), name='developer-list'),
+    path('contact/', ContactEnquiryView.as_view(), name='contact-enquiry'),
 ]

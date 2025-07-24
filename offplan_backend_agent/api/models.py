@@ -2,6 +2,8 @@ from django.db import models
 
 class City(models.Model):
     name = models.CharField(max_length=100)
+    arabic_city_name = models.CharField(max_length=100,null=True)
+    farsi_city_name = models.CharField(max_length=100,null=True)
 
     def __str__(self):
         return self.name
@@ -9,6 +11,8 @@ class City(models.Model):
 
 class District(models.Model):
     name = models.CharField(max_length=100)
+    arabic_dist_name = models.CharField(max_length=100,null=True)
+    farsi_dist_name = models.CharField(max_length=100,null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='districts',null=True, blank=True)
 
     def __str__(self):
@@ -53,7 +57,13 @@ class Facility(models.Model):
 
 class Property(models.Model):
     title = models.CharField(max_length=255)
+    arabic_title = models.CharField(max_length=255,null=True,blank=True)
+    farsi_title = models.CharField(max_length=255,null=True,blank=True)
+    
     description = models.TextField(blank=True, null=True)
+    farsi_desc = models.TextField(blank=True,null=True)
+    arabic_desc = models.TextField(blank=True,null=True)
+    
     cover = models.URLField(blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     address_text = models.CharField(max_length=255, blank=True, null=True)
@@ -220,3 +230,13 @@ class Subscription(models.Model):
 
     def __str__(self):
         return self.email
+
+class Contact(models.Model):
+    name = models.CharField(max_length=255,null=True,blank=True)
+    phone_number = models.CharField(max_length=15,null=True)
+    email = models.EmailField(max_length=25,null=True)
+    message = models.TextField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
