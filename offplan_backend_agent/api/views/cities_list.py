@@ -15,5 +15,6 @@ class CityListView(APIView):
             "status": True,
             "message": "Cities fetched successfully",
             "data": serializer.data,
+            
             "errors": None
         }, status=status.HTTP_200_OK)

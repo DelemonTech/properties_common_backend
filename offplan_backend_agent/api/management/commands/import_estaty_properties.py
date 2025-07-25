@@ -40,8 +40,8 @@ class Command(BaseCommand):
     help = "Import and save Estaty properties"
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS("🔄 Syncing filter data from Estaty..."))
-        self.sync_filters_from_estaty()
+        # self.stdout.write(self.style.SUCCESS("🔄 Syncing filter data from Estaty..."))
+        # self.sync_filters_from_estaty()
 
         self.stdout.write(self.style.SUCCESS("✅ Starting Estaty property import..."))
         page = 1
@@ -78,97 +78,97 @@ class Command(BaseCommand):
 
 # --------------- FETCHING ALL FILTERS BY /getFilters ENDPOINT -----------------------
 
-    def sync_filters_from_estaty(self):
-        try:
-            response = requests.post(FILTERS_URL, headers=HEADERS)
-            response.raise_for_status()
-            data = response.json()
-        except Exception as e:
-            log.error(f"❌ Failed to fetch filter data: {e}")
-            return
+    # def sync_filters_from_estaty(self):
+    #     try:
+    #         response = requests.post(FILTERS_URL, headers=HEADERS)
+    #         response.raise_for_status()
+    #         data = response.json()
+    #     except Exception as e:
+    #         log.error(f"❌ Failed to fetch filter data: {e}")
+    #         return
 
-        # Cities
-        api_ids = set()
-        for city in data.get("cites", []):
-            api_ids.add(city["id"])
-            City.objects.update_or_create(
-                id=city["id"],
-                defaults={"name": city["name"]}
-            )
-        City.objects.exclude(id__in=api_ids).delete()
+    #     # Cities
+    #     api_ids = set()
+    #     for city in data.get("cites", []):
+    #         api_ids.add(city["id"])
+    #         City.objects.update_or_create(
+    #             id=city["id"],
+    #             defaults={"name": city["name"]}
+    #         )
+    #     City.objects.exclude(id__in=api_ids).delete()
 
-        # Districts
-        api_ids = set()
-        cities_by_id = {c.id: c for c in City.objects.all()}
-        for district in data.get("districts", []):
-            district_id = district.get("id")
-            name = district.get("name", "Unknown")
-            city_id = district.get("city_id")
-            city_obj = cities_by_id.get(city_id)
+    #     # Districts
+    #     api_ids = set()
+    #     cities_by_id = {c.id: c for c in City.objects.all()}
+    #     for district in data.get("districts", []):
+    #         district_id = district.get("id")
+    #         name = district.get("name", "Unknown")
+    #         city_id = district.get("city_id")
+    #         city_obj = cities_by_id.get(city_id)
 
-            api_ids.add(district_id)
+    #         api_ids.add(district_id)
 
-            try:
-                obj = District.objects.get(id=district_id)
-                obj.name = name
-                obj.city = city_obj
-                obj.save()
-            except District.DoesNotExist:
-                District.objects.create(id=district_id, name=name, city=city_obj)
-        District.objects.exclude(id__in=api_ids).delete()
+    #         try:
+    #             obj = District.objects.get(id=district_id)
+    #             obj.name = name
+    #             obj.city = city_obj
+    #             obj.save()
+    #         except District.DoesNotExist:
+    #             District.objects.create(id=district_id, name=name, city=city_obj)
+    #     District.objects.exclude(id__in=api_ids).delete()
 
-        # Developer Companies
-        api_ids = set()
-        for dev in data.get("developer_companies", []):
-            api_ids.add(dev["id"])
-            DeveloperCompany.objects.update_or_create(
-                id=dev["id"],
-                defaults={"name": dev["name"]}
-            )
-        DeveloperCompany.objects.exclude(id__in=api_ids).delete()
+    #     # Developer Companies
+    #     api_ids = set()
+    #     for dev in data.get("developer_companies", []):
+    #         api_ids.add(dev["id"])
+    #         DeveloperCompany.objects.update_or_create(
+    #             id=dev["id"],
+    #             defaults={"name": dev["name"]}
+    #         )
+    #     DeveloperCompany.objects.exclude(id__in=api_ids).delete()
 
-        # Property Types
-        api_ids = set()
-        for ptype in data.get("property_types", []):
-            api_ids.add(ptype["id"])
-            PropertyType.objects.update_or_create(
-                id=ptype["id"],
-                defaults={"name": ptype["name"]}
-            )
-            print(ptype, "ptype")
-        PropertyType.objects.exclude(id__in=api_ids).delete()
+    #     # Property Types
+    #     api_ids = set()
+    #     for ptype in data.get("property_types", []):
+    #         api_ids.add(ptype["id"])
+    #         PropertyType.objects.update_or_create(
+    #             id=ptype["id"],
+    #             defaults={"name": ptype["name"]}
+    #         )
+    #         print(ptype, "ptype")
+    #     PropertyType.objects.exclude(id__in=api_ids).delete()
 
-        # Property Statuses
-        api_ids = set()
-        for status in data.get("property_statuses", []):
-            api_ids.add(status["id"])
-            PropertyStatus.objects.update_or_create(
-                id=status["id"],
-                defaults={"name": status["name"]}
-            )
-        PropertyStatus.objects.exclude(id__in=api_ids).delete()
+    #     # Property Statuses
+    #     api_ids = set()
+    #     for status in data.get("property_statuses", []):
+    #         api_ids.add(status["id"])
+    #         PropertyStatus.objects.update_or_create(
+    #             id=status["id"],
+    #             defaults={"name": status["name"]}
+    #         )
+    #     PropertyStatus.objects.exclude(id__in=api_ids).delete()
 
-        # Sales Statuses
-        api_ids = set()
-        for status in data.get("sales_statuses", []):
-            api_ids.add(status["id"])
-            SalesStatus.objects.update_or_create(
-                id=status["id"],
-                defaults={"name": status["name"]}
-            )
-        SalesStatus.objects.exclude(id__in=api_ids).delete()
+    #     # Sales Statuses
+    #     api_ids = set()
+    #     for status in data.get("sales_statuses", []):
+    #         api_ids.add(status["id"])
+    #         SalesStatus.objects.update_or_create(
+    #             id=status["id"],
+    #             defaults={"name": status["name"]}
+    #         )
+    #     SalesStatus.objects.exclude(id__in=api_ids).delete()
 
-        # Facilities
-        api_ids = set()
-        for facility in data.get("facilities", []):
-            api_ids.add(facility["id"])
-            Facility.objects.update_or_create(
-                id=facility["id"],
-                defaults={"name": facility["name"]}
-            )
-        Facility.objects.exclude(id__in=api_ids).delete()
+    #     # Facilities
+    #     api_ids = set()
+    #     for facility in data.get("facilities", []):
+    #         api_ids.add(facility["id"])
+    #         Facility.objects.update_or_create(
+    #             id=facility["id"],
+    #             defaults={"name": facility["name"]}
+    #         )
+    #     Facility.objects.exclude(id__in=api_ids).delete()
 
-        self.stdout.write(self.style.SUCCESS("✅ Filters synced from Estaty"))
+    #     self.stdout.write(self.style.SUCCESS("✅ Filters synced from Estaty"))
 
 # --------------- FETCHING ALL PROPETIES BY /getProperties ENDPOINT -----------------------
 
@@ -224,39 +224,50 @@ class Command(BaseCommand):
 
         
 
-        # --- (only by ID) ---
-        developer_id = (data.get("developer_company") or {}).get("id")
-        print(developer_id,'dev')
-        city_id = (data.get("city") or {}).get("id")
-        print(city_id,'city')
-        district_id = (data.get("district") or {}).get("id")
-        print(district_id,'dist')
-        property_type_id = (data.get("property_type") or {}).get("id")
-        print(property_type_id,'type')
-        property_status_id = (data.get("property_status") or {}).get("id")
-        print(property_status_id,'status')
-        sales_status_id = (data.get("sales_status") or {}).get("id")
-        print(sales_status_id,'sales')
+        # Developer
+        developer_data = data.get("developer_company") or {}
+        developer, _ = DeveloperCompany.objects.update_or_create(
+            id=developer_data.get("id"),
+            defaults={"name": developer_data.get("name") or "Unnamed Developer"}
+        )
 
-        developer = DeveloperCompany.objects.filter(id=developer_id).first()
-        city = City.objects.filter(id=city_id).first()
-        district = District.objects.filter(id=district_id).first()
-        prop_type = PropertyType.objects.filter(id=property_type_id).first()
-        prop_status = PropertyStatus.objects.filter(id=property_status_id).first()
-        sales_status = SalesStatus.objects.filter(id=sales_status_id).first()
-        
-        if not developer:
-            log.warning(f"❌ Missing developer with ID {developer_id}")
-        if not city:
-            log.warning(f"❌ Missing city with ID {city_id}")
-        if not district:
-            log.warning(f"❌ Missing district with ID {district_id}")
-        if not prop_type:
-            log.warning(f"❌ Missing property type with ID {property_type_id}")
-        if not prop_status:
-            log.warning(f"❌ Missing property status with ID {property_status_id}")
-        if not sales_status:
-            log.warning(f"❌ Missing sales status with ID {sales_status_id}")
+        # City
+        city_data = data.get("city") or {}
+        city, _ = City.objects.update_or_create(
+            id=city_data.get("id"),
+            defaults={"name": city_data.get("name") or "Unnamed City"}
+        )
+
+        # District
+        district_data = data.get("district") or {}
+        district, _ = District.objects.update_or_create(
+            id=district_data.get("id"),
+            defaults={
+                "name": district_data.get("name") or "Unnamed District",
+                "city": city  # Link to the above city
+            }
+        )
+
+        # Property Type
+        prop_type_data = data.get("property_type") or {}
+        prop_type, _ = PropertyType.objects.update_or_create(
+            id=prop_type_data.get("id"),
+            defaults={"name": prop_type_data.get("name") or "Unnamed Type"}
+        )
+
+        # Property Status
+        prop_status_data = data.get("property_status") or {}
+        prop_status, _ = PropertyStatus.objects.update_or_create(
+            id=prop_status_data.get("id"),
+            defaults={"name": prop_status_data.get("name") or "Unnamed Status"}
+        )
+
+        # Sales Status
+        sales_status_data = data.get("sales_status") or {}
+        sales_status, _ = SalesStatus.objects.update_or_create(
+            id=sales_status_data.get("id"),
+            defaults={"name": sales_status_data.get("name") or "Unnamed Sales Status"}
+        )
 
         
 

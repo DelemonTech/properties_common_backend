@@ -3,24 +3,43 @@ from .models import AgentDetails, Property
 from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
 from django.db.models import Sum
 
-class CitySerializerWithDistricts(serializers.ModelSerializer):
-    districts = serializers.SerializerMethodField()
+
+# class CitySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = City
+#         fields = ["id", "name", "farsi_city_name", "arabic_city_name"]
+
+# class DistrictSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = District
+#         fields = ["id", "name", "farsi_dist_name", "arabic_dist_name"]
+
+# class CitySerializerWithDistricts(serializers.ModelSerializer):
+#     districts = DistrictSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = City
+#         fields = ["id", "name", "farsi_city_name", "arabic_city_name", "districts"]
+    # def get_districts(self,obj):
+    #     return [district.name for district in obj.districts.all()] 
+
+
+class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
-        model = City
-        fields = ["id", "name","districts"]
-    def get_districts(self,obj):
-        return [district.name for district in obj.districts.all()] 
+        model = District
+        fields = ['id', 'name', 'arabic_dist_name', 'farsi_dist_name']
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
-        fields = ["id", "name","farsi_city_name","arabic_city_name"]
+        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name']
 
-class DistrictSerializer(serializers.ModelSerializer):
-    city = CitySerializer()
+class CitySerializerWithDistricts(serializers.ModelSerializer):
+    districts = DistrictSerializer(many=True, read_only=True)
+
     class Meta:
-        model = District
-        fields = ["id", "name", "city", "farsi_dist_name", "arabic_dist_name"]
+        model = City
+        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name', 'districts']
 
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:

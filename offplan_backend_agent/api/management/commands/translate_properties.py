@@ -122,25 +122,25 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if grouped.ar_unit_type and grouped.unit_type:
+                if not grouped.ar_unit_type and grouped.unit_type:
                     cleaned_name = clean_text(grouped.unit_type)
                     grouped.ar_unit_type = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if grouped.fa_unit_type and grouped.unit_type:
+                if not grouped.fa_unit_type and grouped.unit_type:
                     cleaned_name = clean_text(grouped.unit_type)
                     grouped.fa_unit_type = fa_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
                 
-                if grouped.ar_rooms and grouped.rooms:
+                if not grouped.ar_rooms and grouped.rooms:
                     cleaned_name = clean_text(grouped.rooms)
                     grouped.ar_rooms = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if grouped.fa_rooms and grouped.rooms:
+                if not grouped.fa_rooms and grouped.rooms:
                     cleaned_name = clean_text(grouped.rooms)
                     grouped.fa_rooms = fa_translator.translate(cleaned_name)
                     updated = True
@@ -161,13 +161,13 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if facility.ar_facility and facility.name:
+                if not facility.ar_facility and facility.name:
                     cleaned_name = clean_text(facility.name)
                     facility.ar_facility = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if facility.fa_facility and facility.name:
+                if not facility.fa_facility and facility.name:
                     cleaned_name = clean_text(facility.name)
                     facility.fa_facility = fa_translator.translate(cleaned_name)
                     updated = True
@@ -187,25 +187,25 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if payment.ar_plan_name and payment.name:
+                if not payment.ar_plan_name and payment.name:
                     cleaned_name = clean_text(payment.name)
                     payment.ar_plan_name = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if payment.fa_plan_name and payment.name:
+                if not payment.fa_plan_name and payment.name:
                     cleaned_name = clean_text(payment.name)
                     payment.fa_plan_name = fa_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
                 
-                if payment.ar_plan_desc and payment.description:
+                if not payment.ar_plan_desc and payment.description:
                     cleaned_name = clean_text(payment.description)
                     payment.ar_plan_desc = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if payment.fa_plan_desc and payment.description:
+                if not payment.fa_plan_desc and payment.description:
                     cleaned_name = clean_text(payment.description)
                     payment.fa_plan_desc = fa_translator.translate(cleaned_name)
                     updated = True
@@ -226,13 +226,13 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if value.ar_value_name and value.name:
+                if not value.ar_value_name and value.name:
                     cleaned_name = clean_text(value.name)
                     value.ar_value_name = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if value.fa_value_name and value.name:
+                if not value.fa_value_name and value.name:
                     cleaned_name = clean_text(value.name)
                     value.fa_value_name = fa_translator.translate(cleaned_name)
                     updated = True
@@ -247,19 +247,44 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"❌ Error on payment plan value '{value.name}': {e}"))
         
-        # sales status
+        # property status
 
+        for prop_stat in PropertyStatus.objects.all():
+            try:
+                updated = False
+
+                if not prop_stat.ar_prop_status and prop_stat.name:
+                    cleaned_name = clean_text(prop_stat.name)
+                    prop_stat.ar_prop_status = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if not prop_stat.fa_prop_status and prop_stat.name:
+                    cleaned_name = clean_text(prop_stat.name)
+                    prop_stat.fa_prop_status = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+                
+                if updated:
+                    sales.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated property status: {prop_stat.name}"))
+                else:
+                    self.stdout.write(f" Skipped property status: {prop_stat.name} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on property status '{prop_stat.name}': {e}"))
+        # sales status
         for sales in SalesStatus.objects.all():
             try:
                 updated = False
 
-                if sales.ar_sales_status and sales.name:
+                if not sales.ar_sales_status and sales.name:
                     cleaned_name = clean_text(sales.name)
                     sales.ar_sales_status = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if sales.fa_sales_status and sales.name:
+                if not sales.fa_sales_status and sales.name:
                     cleaned_name = clean_text(sales.name)
                     sales.fa_sales_status = fa_translator.translate(cleaned_name)
                     updated = True
@@ -273,6 +298,7 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"❌ Error on sales status '{sales.name}': {e}"))
+            
             
             
             
