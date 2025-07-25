@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import AgentDetails, Property
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
 from django.db.models import Sum
 
 class CitySerializerWithDistricts(serializers.ModelSerializer):
@@ -77,4 +77,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model= Contact
+        fields = '__all__'
+        
+class ReserveNowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReserveNow
+        fields = ['name','whatsapp_number','email']
+
+class RequestCallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestCallBack
         fields = '__all__'

@@ -15,6 +15,7 @@ from api.views.subscription import SubscribeView
 from api.views.developers_list import DeveloperListView
 from api.views import AgentListView
 from api.views.contact_enquiry import ContactEnquiryView
+from api.views.reserve_now import ReserveNowView
 
 
 # router = DefaultRouter()
@@ -37,4 +38,5 @@ urlpatterns = [
     path('subscribe/', SubscribeView.as_view(), name='subscribe'),
     path('developers/', DeveloperListView.as_view(), name='developer-list'),
     path('contact/', ContactEnquiryView.as_view(), name='contact-enquiry'),
+    path('reserve-now/<int:id>/',ReserveNowView.as_view(),name='reserve-now'),
 ]
