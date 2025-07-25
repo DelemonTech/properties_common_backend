@@ -85,7 +85,7 @@ class PaymentPlanSerializer(serializers.ModelSerializer):
 class GroupedApartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupedApartment
-        fields = ['id', 'unit_type', 'rooms', 'min_price', 'min_area']
+        fields = ['id', 'unit_type', 'rooms', 'min_price', 'min_area','ar_unit_type','fa_unit_type',]
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):

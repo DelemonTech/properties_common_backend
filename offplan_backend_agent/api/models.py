@@ -35,6 +35,8 @@ class PropertyType(models.Model):
 
 class PropertyStatus(models.Model):
     name = models.CharField(max_length=100)
+    ar_prop_status = models.CharField(max_length=255,null=True)
+    fa_prop_status = models.CharField(max_length=255,null=True)
 
     def __str__(self):
         return self.name
@@ -42,6 +44,8 @@ class PropertyStatus(models.Model):
 
 class SalesStatus(models.Model):
     name = models.CharField(max_length=100)
+    ar_sales_status = models.CharField(max_length=255,null=True)
+    fa_sales_status = models.CharField(max_length=255,null=True)
 
     def __str__(self):
         return self.name
@@ -50,6 +54,8 @@ class SalesStatus(models.Model):
 class Facility(models.Model):
     id = models.BigIntegerField(primary_key=True)
     name = models.CharField(max_length=100)
+    ar_facility = models.CharField(max_length=255,null=True)
+    fa_facility = models.CharField(max_length=255, null=True)
 
     def __str__(self):
         return self.name
@@ -149,6 +155,10 @@ class PaymentPlan(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='payment_plans')
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+    ar_plan_name = models.CharField(max_length=50,null=True)
+    fa_plan_name = models.CharField(max_length=50,null=True)
+    ar_plan_desc = models.CharField(max_length=100, null=True)
+    fa_plan_desc = models.CharField(max_length=100, null=True)
 
     def __str__(self):
         return f"{self.name} for {self.property.title}"
@@ -158,6 +168,8 @@ class PaymentPlanValue(models.Model):
     property_payment_plan = models.ForeignKey(PaymentPlan, on_delete=models.CASCADE, related_name='values')
     name = models.CharField(max_length=255)  # Keep this large enough
     value = models.CharField(max_length=255)  # Increased from 20 to 255
+    ar_value_name = models.CharField(max_length=255,null=True)
+    fa_value_name = models.CharField(max_length=255,null=True)
 
     def __str__(self):
         return f"{self.name}: {self.value}"
@@ -169,6 +181,10 @@ class GroupedApartment(models.Model):
     rooms = models.CharField(max_length=100)
     min_price = models.FloatField(null=True, blank=True)
     min_area = models.FloatField(null=True, blank=True)
+    ar_unit_type = models.CharField(max_length=50,null=True)
+    fa_unit_type = models.CharField(max_length=50,null=True)
+    ar_rooms = models.CharField(max_length=50, null=True)
+    fa_rooms = models.CharField(max_length=50, null=True)
 
     def __str__(self):
         return f"{self.unit_type} - {self.rooms}"
