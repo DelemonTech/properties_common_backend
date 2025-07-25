@@ -204,6 +204,8 @@ class AgentDetails(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     fa_name = models.TextField(null=True, blank=True)
     fa_description = models.TextField(null=True, blank=True)
+    ar_name = models.TextField(null=True, blank=True)
+    ar_description = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'agent_details'
@@ -234,9 +236,20 @@ class Subscription(models.Model):
 class Contact(models.Model):
     name = models.CharField(max_length=255,null=True,blank=True)
     phone_number = models.CharField(max_length=15,null=True)
-    email = models.EmailField(max_length=25,null=True)
+    email = models.EmailField(max_length=30,null=True)
     message = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.name
+
+class ReserveNow(models.Model):
+    name = models.CharField(max_length=255,null=True)
+    whatsapp_number = models.CharField(max_length=20,null=True)
+    email = models.EmailField(max_length=30,null=True)
+    unit_id = models.ForeignKey(PropertyUnit,on_delete=models.CASCADE,related_name="units")
+
+class RequestCallBack(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    phone_number = models.CharField(max_length=20,null=True)
+    email = models.EmailField(max_length=30, null=True)

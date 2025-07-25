@@ -1,7 +1,13 @@
+import re
 import time
 from django.core.management.base import BaseCommand
 from deep_translator import GoogleTranslator
 from api.models import Property, City, District
+
+
+def clean_text(text):
+    # Remove everything except letters, numbers, and spaces
+    return re.sub(r'[^\w\s]', '', text).strip()
 
 
 class Command(BaseCommand):
@@ -17,23 +23,27 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if not prop.arabic_title and prop.title:
-                    prop.arabic_title = ar_translator.translate(prop.title)
+                if prop.arabic_title and prop.title:
+                    cleaned_title = clean_text(prop.title)
+                    prop.arabic_title = ar_translator.translate(cleaned_title)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.farsi_title and prop.title:
-                    prop.farsi_title = fa_translator.translate(prop.title)
+                if prop.farsi_title and prop.title:
+                    cleaned_title = clean_text(prop.title)
+                    prop.farsi_title = fa_translator.translate(cleaned_title)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.arabic_desc and prop.description:
-                    prop.arabic_desc = ar_translator.translate(prop.description)
+                if prop.arabic_desc and prop.description:
+                    cleaned_desc = clean_text(prop.description)
+                    prop.arabic_desc = ar_translator.translate(cleaned_desc)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.farsi_desc and prop.description:
-                    prop.farsi_desc = fa_translator.translate(prop.description)
+                if prop.farsi_desc and prop.description:
+                    cleaned_desc = clean_text(prop.description)
+                    prop.farsi_desc = fa_translator.translate(cleaned_desc)
                     updated = True
                     time.sleep(1.2)
 
@@ -51,13 +61,15 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if not city.arabic_city_name and city.name:
-                    city.arabic_city_name = ar_translator.translate(city.name)
+                if city.arabic_city_name and city.name:
+                    cleaned_name = clean_text(city.name)
+                    city.arabic_city_name = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if not city.farsi_city_name and city.name:
-                    city.farsi_city_name = fa_translator.translate(city.name)
+                if city.farsi_city_name and city.name:
+                    cleaned_name = clean_text(city.name)
+                    city.farsi_city_name = fa_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
@@ -65,7 +77,7 @@ class Command(BaseCommand):
                     city.save()
                     self.stdout.write(self.style.SUCCESS(f"✅ Translated City: {city.name}"))
                 else:
-                    self.stdout.write(f"⏭ Skipped City: {city.name} - Already translated")
+                    self.stdout.write(f" Skipped City: {city.name} - Already translated")
 
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"❌ Error on City '{city.name}': {e}"))
@@ -75,13 +87,15 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if not district.arabic_dist_name and district.name:
-                    district.arabic_dist_name = ar_translator.translate(district.name)
+                if district.arabic_dist_name and district.name:
+                    cleaned_name = clean_text(district.name)
+                    district.arabic_dist_name = ar_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
-                if not district.farsi_dist_name and district.name:
-                    district.farsi_dist_name = fa_translator.translate(district.name)
+                if district.farsi_dist_name and district.name:
+                    cleaned_name = clean_text(district.name)
+                    district.farsi_dist_name = fa_translator.translate(cleaned_name)
                     updated = True
                     time.sleep(1.2)
 
