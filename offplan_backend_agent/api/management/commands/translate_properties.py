@@ -1,8 +1,9 @@
 import re
 import time
+from itertools import chain
 from django.core.management.base import BaseCommand
 from deep_translator import GoogleTranslator
-from api.models import Property, City, District
+from api.models import *
 
 
 def clean_text(text):
@@ -16,10 +17,17 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         ar_translator = GoogleTranslator(source='auto', target='ar')
         fa_translator = GoogleTranslator(source='auto', target='fa')
+        
+        off_status = PropertyStatus.objects.get(name__iexact='Off Plan')
+        ready_status = PropertyStatus.objects.get(name__iexact='Ready')
 
         # Translate Properties
-        properties = Property.objects.all()
-        for prop in properties:
+        properties = Property.objects.all()[:50]
+        offplan = Property.objects.filter(property_status=off_status).order_by('-updated_at')[:50]
+        ready = Property.objects.filter(property_status=ready_status).order_by('-updated_at')[:50]
+        combined = list(chain(offplan, ready, properties))
+        print(combined,'combined')
+        for prop in combined:
             try:
                 updated = False
 
@@ -107,5 +115,166 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"❌ Error on District '{district.name}': {e}"))
+        
+        
+        # group apartments
+        for grouped in GroupedApartment.objects.all():
+            try:
+                updated = False
+
+                if grouped.ar_unit_type and grouped.unit_type:
+                    cleaned_name = clean_text(grouped.unit_type)
+                    grouped.ar_unit_type = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if grouped.fa_unit_type and grouped.unit_type:
+                    cleaned_name = clean_text(grouped.unit_type)
+                    grouped.fa_unit_type = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+                
+                if grouped.ar_rooms and grouped.rooms:
+                    cleaned_name = clean_text(grouped.rooms)
+                    grouped.ar_rooms = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if grouped.fa_rooms and grouped.rooms:
+                    cleaned_name = clean_text(grouped.rooms)
+                    grouped.fa_rooms = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+
+                if updated:
+                    grouped.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated grouped apartment: {grouped.unit_type}"))
+                else:
+                    self.stdout.write(f" Skipped grouped apartment: {grouped.unit_type} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on grouped apartment '{grouped.unit_type}': {e}"))
+        
+        # facilities
+        for facility in Facility.objects.all():
+            try:
+                updated = False
+
+                if facility.ar_facility and facility.name:
+                    cleaned_name = clean_text(facility.name)
+                    facility.ar_facility = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if facility.fa_facility and facility.name:
+                    cleaned_name = clean_text(facility.name)
+                    facility.fa_facility = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if updated:
+                    facility.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated facility: {facility.name}"))
+                else:
+                    self.stdout.write(f" Skipped facility: {facility.name} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on facility '{facility.name}': {e}"))
+            
+        # payment plan
+        for payment in PaymentPlan.objects.all():
+            try:
+                updated = False
+
+                if payment.ar_plan_name and payment.name:
+                    cleaned_name = clean_text(payment.name)
+                    payment.ar_plan_name = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if payment.fa_plan_name and payment.name:
+                    cleaned_name = clean_text(payment.name)
+                    payment.fa_plan_name = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+                
+                if payment.ar_plan_desc and payment.description:
+                    cleaned_name = clean_text(payment.description)
+                    payment.ar_plan_desc = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if payment.fa_plan_desc and payment.description:
+                    cleaned_name = clean_text(payment.description)
+                    payment.fa_plan_desc = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+
+                if updated:
+                    payment.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated payment plan: {payment.name}"))
+                else:
+                    self.stdout.write(f" Skipped payment plan: {payment.name} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on payment plan '{payment.name}': {e}"))
+        
+        # PaymentplanValue
+        for value in PaymentPlanValue.objects.all():
+            try:
+                updated = False
+
+                if value.ar_value_name and value.name:
+                    cleaned_name = clean_text(value.name)
+                    value.ar_value_name = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if value.fa_value_name and value.name:
+                    cleaned_name = clean_text(value.name)
+                    value.fa_value_name = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+                
+                if updated:
+                    value.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated payment plan value: {value.name}"))
+                else:
+                    self.stdout.write(f" Skipped payment plan value: {value.name} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on payment plan value '{value.name}': {e}"))
+        
+        # sales status
+
+        for sales in SalesStatus.objects.all():
+            try:
+                updated = False
+
+                if sales.ar_sales_status and sales.name:
+                    cleaned_name = clean_text(sales.name)
+                    sales.ar_sales_status = ar_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+
+                if sales.fa_sales_status and sales.name:
+                    cleaned_name = clean_text(sales.name)
+                    sales.fa_sales_status = fa_translator.translate(cleaned_name)
+                    updated = True
+                    time.sleep(1.2)
+                
+                if updated:
+                    sales.save()
+                    self.stdout.write(self.style.SUCCESS(f"✅ Translated sales status: {sales.name}"))
+                else:
+                    self.stdout.write(f" Skipped sales status: {sales.name} - Already translated")
+
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"❌ Error on sales status '{sales.name}': {e}"))
+            
+            
+            
 
         self.stdout.write(self.style.SUCCESS("🎉 All translations completed successfully."))
