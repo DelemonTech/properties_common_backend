@@ -12,7 +12,7 @@ class Command(BaseCommand):
         fa_translator = GoogleTranslator(source='auto', target='fa')
 
         # Translate Properties
-        properties = Property.objects.all()[:30]
+        properties = Property.objects.all()
         for prop in properties:
             try:
                 updated = False
