@@ -3,31 +3,34 @@ from .models import AgentDetails, Property
 from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
 from django.db.models import Sum
 
+class CitySerializerWithDistricts(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    districts = serializers.SerializerMethodField()
 
-# class CitySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = City
-#         fields = ["id", "name", "farsi_city_name", "arabic_city_name"]
-
-# class DistrictSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = District
-#         fields = ["id", "name", "farsi_dist_name", "arabic_dist_name"]
-
-# class CitySerializerWithDistricts(serializers.ModelSerializer):
-#     districts = DistrictSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = City
-#         fields = ["id", "name", "farsi_city_name", "arabic_city_name", "districts"]
-    # def get_districts(self,obj):
-    #     return [district.name for district in obj.districts.all()] 
-
-
-class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
-        model = District
-        fields = ['id', 'name', 'arabic_dist_name', 'farsi_dist_name']
+        model = City
+        fields = ["id", "name", "districts"]
+
+    def get_name(self, obj):
+        return {
+            "en": obj.name,
+            "fa": obj.farsi_city_name,
+            "ar": obj.arabic_city_name
+        }
+
+    def get_districts(self, obj):
+        return [
+            {
+                "id": district.id,
+                "name": {
+                    "en": district.name,
+                    "fa": district.farsi_dist_name,
+                    "ar": district.arabic_dist_name
+                }
+            }
+            for district in obj.districts.all()
+        ]
+
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,9 +40,31 @@ class CitySerializer(serializers.ModelSerializer):
 class CitySerializerWithDistricts(serializers.ModelSerializer):
     districts = DistrictSerializer(many=True, read_only=True)
 
+class DistrictSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+
     class Meta:
-        model = City
-        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name', 'districts']
+        model = District
+        fields = ["id", "name", "city"]
+
+    def get_name(self, obj):
+        return {
+            "en": obj.name,
+            "fa": obj.farsi_dist_name,
+            "ar": obj.arabic_dist_name
+        }
+
+    def get_city(self, obj):
+        return {
+            "id": obj.city.id,
+            "name": {
+                "en": obj.city.name,
+                "fa": obj.city.farsi_city_name,
+                "ar": obj.city.arabic_city_name
+            }
+        }
+
 
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:
