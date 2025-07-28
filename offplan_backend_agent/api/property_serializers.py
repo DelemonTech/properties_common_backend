@@ -121,11 +121,11 @@ class PaymentPlanValueSerializer(serializers.ModelSerializer):
         }
 
 class PaymentPlanSerializer(serializers.ModelSerializer):
-    payment_plans = PaymentPlanValueSerializer(many=True)
+    values = PaymentPlanValueSerializer(many=True)
 
     class Meta:
         model = PaymentPlan
-        fields = ["id", "property_id", "name", "description", "payment_plans"]
+        fields = ["id", "property_id", "name", "description", "values"]
 
 class GroupedApartmentSerializer(serializers.ModelSerializer):
     class Meta:
