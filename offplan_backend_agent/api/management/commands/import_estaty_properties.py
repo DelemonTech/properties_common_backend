@@ -240,13 +240,24 @@ class Command(BaseCommand):
 
         # District
         district_data = data.get("district") or {}
-        district, _ = District.objects.update_or_create(
-            id=district_data.get("id"),
+        district_id = district_data.get("id")
+        if not district_id:
+            log.warning(f"⚠️ Skipping property due to missing district ID: {district_data}")
+            return None  # or continue
+
+        District.objects.filter(id=district_id).update(
+            name=district_data.get("name") or "Unnamed District",
+            city=city
+        )
+
+        district, created = District.objects.get_or_create(
+            id=district_id,
             defaults={
                 "name": district_data.get("name") or "Unnamed District",
-                "city": city  # Link to the above city
+                "city": city
             }
         )
+        
 
         # Property Type
         prop_type_data = data.get("property_type") or {}
