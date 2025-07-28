@@ -104,8 +104,8 @@ class FacilityNameSerializer(serializers.ModelSerializer):
 class FacilitySerializer(serializers.ModelSerializer):
     facilities=FacilityNameSerializer(many=True)
     class Meta:
-        model = Facility
-        fields = ['id', 'name']
+        model = PropertyFacility
+        fields = ["property_id", "facility_id", "facility"]
 
 class PaymentPlanValueSerializer(serializers.ModelSerializer):
     payment_object = serializers.SerializerMethodField()
@@ -122,11 +122,24 @@ class PaymentPlanValueSerializer(serializers.ModelSerializer):
 
 class PaymentPlanSerializer(serializers.ModelSerializer):
     values = PaymentPlanValueSerializer(many=True)
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentPlan
         fields = ["id", "property_id", "name", "description", "values"]
-
+    def get_name(self,obj):
+        return{
+            "en":obj.name,
+            "ar":obj.ar_plan_name,
+            "fa":obj.fa_plan_name,
+        }
+    def get_description(self,obj):
+        return{
+            "en":obj.description,
+            "ar":obj.ar_plan_desc,
+            "fa":obj.fa_plan_desc,
+        }
 class GroupedApartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupedApartment
@@ -138,7 +151,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     district = DistrictSerializer()
     developer = DeveloperCompanySerializer()
     property_images = PropertyImageSerializer(many=True)
-    facilities = FacilityNameSerializer(many=True)
+    facilities = FacilitySerializer(many=True)
     grouped_apartments = GroupedApartmentSerializer(many=True)
     payment_plans = PaymentPlanSerializer(many=True)
     property_units = PropertyUnitSerializer(many=True, read_only=True)  # ✅ Add this
@@ -189,6 +202,7 @@ class PropertySerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     # 👇 Add computed field
     subunit_count = serializers.SerializerMethodField()
+    sales_status = SalesStatusSerializer()
 
     class Meta:
         model = Property
@@ -209,6 +223,7 @@ class PropertySerializer(serializers.ModelSerializer):
             'district',
             'developer',
             'subunit_count',  
+            
         ]
     
     def get_title(self, obj):
