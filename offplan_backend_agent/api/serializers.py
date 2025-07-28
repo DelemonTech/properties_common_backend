@@ -81,26 +81,49 @@ class PropertySerializer(serializers.ModelSerializer):
     
 
     def get_subunit_count(self, obj):
+        request = self.context.get("request")
+        lang = request.query_params.get("lang") if request else "en"
         total_subunits = getattr(obj, "subunit_count", None)
         if total_subunits is None:
             # fallback if not annotated
             total_subunits = obj.property_units.aggregate(
                 total=Sum('unit_count')
             )['total'] or 0
+        unit_labels = {
+            "en": ("unit", "units"),
+            "ar": ("وحدة", "وحدات"),
+            "fa": ("واحد", "واحدها"),
+        }
+
+        singular, plural = unit_labels.get(lang, unit_labels["en"])
 
         if total_subunits <= 1:
-            return "1 unit"
+            return f"1 {singular}"
         elif total_subunits > 9:
-            return "9+ units"
+            return f"9+ {plural}"
         else:
-            return f"{total_subunits} units"
+            return f"{total_subunits} {plural}"
+
+        # if total_subunits <= 1:
+        #     return "1 unit"
+        # elif total_subunits > 9:
+        #     return "9+ units"
+        # else:
+        #     return f"{total_subunits} units"
     
     
 
 class AgentDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
     class Meta:
         model = AgentDetails
         fields = '__all__'
+    def get_name(self,obj):
+        return{
+            "en":obj.name,
+            "ar":obj.ar_name,
+            "fa":obj.fa_name,
+        }
 
 class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
