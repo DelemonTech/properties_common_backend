@@ -65,11 +65,11 @@ class DeveloperCompanySerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
         
 class SalesStatusSerializer(serializers.ModelSerializer):
-    status_name = serializers.SerializerMethodField()
+    sales_status = serializers.SerializerMethodField()
     class Meta:
         model = SalesStatus
-        fields = ["id", "name","status_name"]
-    def get_status_name(self,obj):
+        fields = ["id", "name","sales_status"]
+    def get_sales_status(self,obj):
         return{
             "en":obj.name,
             "ar":obj.ar_sales_status,
@@ -83,10 +83,10 @@ class PropertyImageSerializer(serializers.ModelSerializer):
         fields = ["image", "property_id", "type"]
 
 class FacilityNameSerializer(serializers.ModelSerializer):
-    facility_names = serializers.SerializerMethodField()
+    facilities = serializers.SerializerMethodField()
     class Meta:
         model = Facility  # define this model if not already
-        fields = ["id", "name","facility_names"]
+        fields = ["id", "name","facilities"]
     def get_facility_names(self,obj):
         return{
             "en":obj.name,
@@ -157,10 +157,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             'guarantee_rental_guarantee', 'guarantee_rental_guarantee_value',
             'city', 'district', 'developer', 'property_type', 'property_status',
             'sales_status', 'property_images', 'facilities',
-            'grouped_apartments', 'payment_plans', 'property_units',
-            'arabic_title','arabic_desc','farsi_title','farsi_desc',
-            
-        ]
+            'grouped_apartments', 'payment_plans', 'property_units']
     
     def get_title(self, obj):
         return {
@@ -190,7 +187,6 @@ class PropertySerializer(serializers.ModelSerializer):
     payment_plans = PaymentPlanSerializer(many=True, read_only=True)
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-
     # 👇 Add computed field
     subunit_count = serializers.SerializerMethodField()
 
@@ -212,7 +208,6 @@ class PropertySerializer(serializers.ModelSerializer):
             'city',
             'district',
             'developer',
-            
             'subunit_count',  
         ]
     
@@ -240,16 +235,26 @@ class PropertySerializer(serializers.ModelSerializer):
 
         # Format count and translated label
         if total_subunits <= 1:
-            label = _("unit")
             value = 1
+            label_en = "unit"
+            label_ar = "وحدة"
+            label_fa = "واحد"
         elif total_subunits > 9:
-            label = _("units")
             value = "9+"
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
         else:
-            label = _("units")
             value = total_subunits
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
 
         return {
             "value": value,
-            "label": label
+            "label": {
+                "en": label_en,
+                "ar": label_ar,
+                "fa": label_fa,
+            },
         }
