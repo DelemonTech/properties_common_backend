@@ -36,11 +36,11 @@ class PropertyUnitSerializer(serializers.ModelSerializer):
 
 # Define nested serializers if not already present
 class CitySerializer(serializers.ModelSerializer):
-    city_names = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
     class Meta:
         model = City
-        fields = ["id", "name",'city_names']
-    def get_city_names(self,obj):
+        fields = ["id", "name",'city']
+    def get_city(self,obj):
         return{
             "en":obj.name,
             "ar":obj.arabic_city_name,
@@ -48,11 +48,11 @@ class CitySerializer(serializers.ModelSerializer):
         }
 
 class DistrictSerializer(serializers.ModelSerializer):
-    dist_names = serializers.SerializerMethodField()
+    district = serializers.SerializerMethodField()
     class Meta:
         model = District
-        fields = ["id", "name","dist_names"]
-    def get_dist_names(self,obj):
+        fields = ["id", "name","district"]
+    def get_district(self,obj):
         return{
             "en":obj.name,
             "ar":obj.arabic_dist_name,
@@ -87,7 +87,7 @@ class FacilityNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Facility  # define this model if not already
         fields = ["id", "name","facilities"]
-    def get_facility_names(self,obj):
+    def get_facilities(self,obj):
         return{
             "en":obj.name,
             "ar":obj.ar_facility,
@@ -121,11 +121,11 @@ class PaymentPlanValueSerializer(serializers.ModelSerializer):
         }
 
 class PaymentPlanSerializer(serializers.ModelSerializer):
-    values = PaymentPlanValueSerializer(many=True)
+    payment_plans = PaymentPlanValueSerializer(many=True)
 
     class Meta:
         model = PaymentPlan
-        fields = ["id", "property_id", "name", "description", "values"]
+        fields = ["id", "property_id", "name", "description", "payment_plans"]
 
 class GroupedApartmentSerializer(serializers.ModelSerializer):
     class Meta:
