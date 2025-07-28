@@ -115,6 +115,7 @@ class PropertySerializer(serializers.ModelSerializer):
 
 class AgentDetailSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     class Meta:
         model = AgentDetails
         fields = '__all__'
@@ -123,6 +124,12 @@ class AgentDetailSerializer(serializers.ModelSerializer):
             "en":obj.name,
             "ar":obj.ar_name,
             "fa":obj.fa_name,
+        }
+    def get_description(self, obj):
+        return {
+            "en": obj.description,
+            "ar": obj.ar_description,
+            "fa": obj.fa_description,
         }
 
 class ConsultationSerializer(serializers.ModelSerializer):
