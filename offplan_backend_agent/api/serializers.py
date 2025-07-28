@@ -25,22 +25,32 @@ from django.db.models import Sum
 
 
 class DistrictSerializer(serializers.ModelSerializer):
+    dist_names = serializers.SerializerMethodField()
     class Meta:
         model = District
-        fields = ['id', 'name', 'arabic_dist_name', 'farsi_dist_name']
+        fields = ['id', 'name','dist_names']
+    
+    def get_dist_names(self, obj):
+        return {
+            "en": obj.name or "",
+            "ar": obj.arabic_dist_name or "",
+            "fa": obj.farsi_dist_name or "",
+        }
 
 class CitySerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = City
-        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name']
+        fields = ['id', 'name', ]
+    
+   
 
 class CitySerializerWithDistricts(serializers.ModelSerializer):
     districts = DistrictSerializer(many=True, read_only=True)
-
     class Meta:
         model = City
-        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name', 'districts']
-
+        fields = ['id', 'name', 'districts',]
+    
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = DeveloperCompany
@@ -51,6 +61,7 @@ class PropertySerializer(serializers.ModelSerializer):
     district = DistrictSerializer()
     developer = DeveloperCompanySerializer()
     subunit_count = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -59,9 +70,16 @@ class PropertySerializer(serializers.ModelSerializer):
             "delivery_date", "min_area", "low_price",
             "property_type", "property_status", "sales_status",
             "updated_at", "city", "district", "developer","subunit_count",
-            "arabic_title","arabic_desc","farsi_title","farsi_desc",
+           
         ]
+    def get_title(self, obj):
+        return {
+            "en": obj.title or "",
+            "ar": obj.arabic_title or "",
+            "fa": obj.farsi_title or "",
+        }
     
+
     def get_subunit_count(self, obj):
         total_subunits = getattr(obj, "subunit_count", None)
         if total_subunits is None:
@@ -76,7 +94,8 @@ class PropertySerializer(serializers.ModelSerializer):
             return "9+ units"
         else:
             return f"{total_subunits} units"
-
+    
+    
 
 class AgentDetailSerializer(serializers.ModelSerializer):
     class Meta:
