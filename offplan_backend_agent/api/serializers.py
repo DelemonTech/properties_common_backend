@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import AgentDetails, Property
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack, PropertyUnit
 from django.db.models import Sum
 
 
@@ -25,12 +25,12 @@ from django.db.models import Sum
 
 
 class DistrictSerializer(serializers.ModelSerializer):
-    dist_names = serializers.SerializerMethodField()
+    district = serializers.SerializerMethodField()
     class Meta:
         model = District
-        fields = ['id', 'name','dist_names']
+        fields = ['id', 'name','district']
     
-    def get_dist_names(self, obj):
+    def get_district(self, obj):
         return {
             "en": obj.name or "",
             "ar": obj.arabic_dist_name or "",
@@ -78,38 +78,70 @@ class PropertySerializer(serializers.ModelSerializer):
             "ar": obj.arabic_title or "",
             "fa": obj.farsi_title or "",
         }
-    
-
     def get_subunit_count(self, obj):
-        request = self.context.get("request")
-        lang = request.query_params.get("lang") if request else "en"
+        # Fetch the annotated count
         total_subunits = getattr(obj, "subunit_count", None)
         if total_subunits is None:
-            # fallback if not annotated
-            total_subunits = obj.property_units.aggregate(
-                total=Sum('unit_count')
-            )['total'] or 0
-        unit_labels = {
-            "en": ("unit", "units"),
-            "ar": ("وحدة", "وحدات"),
-            "fa": ("واحد", "واحدها"),
+            total_subunits = PropertyUnit.objects.filter(
+                property=obj
+            ).aggregate(total=Sum('unit_count'))['total'] or 0
+
+        # Format count and translated label
+        if total_subunits <= 1:
+            value = 1
+            label_en = "unit"
+            label_ar = "وحدة"
+            label_fa = "واحد"
+        elif total_subunits > 9:
+            value = "9+"
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
+        else:
+            value = total_subunits
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
+
+        return {
+            "value": value,
+            "label": {
+                "en": label_en,
+                "ar": label_ar,
+                "fa": label_fa,
+            },
         }
 
-        singular, plural = unit_labels.get(lang, unit_labels["en"])
+    # def get_subunit_count(self, obj):
+    #     request = self.context.get("request")
+    #     lang = request.query_params.get("lang") if request else "en"
+    #     total_subunits = getattr(obj, "subunit_count", None)
+    #     if total_subunits is None:
+    #         # fallback if not annotated
+    #         total_subunits = obj.property_units.aggregate(
+    #             total=Sum('unit_count')
+    #         )['total'] or 0
+    #     unit_labels = {
+    #         "en": ("unit", "units"),
+    #         "ar": ("وحدة", "وحدات"),
+    #         "fa": ("واحد", "واحدها"),
+    #     }
 
-        if total_subunits <= 1:
-            return f"1 {singular}"
-        elif total_subunits > 9:
-            return f"9+ {plural}"
-        else:
-            return f"{total_subunits} {plural}"
+    #     singular, plural = unit_labels.get(lang, unit_labels["en"])
 
-        # if total_subunits <= 1:
-        #     return "1 unit"
-        # elif total_subunits > 9:
-        #     return "9+ units"
-        # else:
-        #     return f"{total_subunits} units"
+    #     if total_subunits <= 1:
+    #         return f"1 {singular}"
+    #     elif total_subunits > 9:
+    #         return f"9+ {plural}"
+    #     else:
+    #         return f"{total_subunits} {plural}"
+
+    #     # if total_subunits <= 1:
+    #     #     return "1 unit"
+    #     # elif total_subunits > 9:
+    #     #     return "9+ units"
+    #     # else:
+    #     #     return f"{total_subunits} units"
     
     
 

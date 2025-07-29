@@ -105,7 +105,7 @@ class FacilitySerializer(serializers.ModelSerializer):
     facilities=FacilityNameSerializer(many=True)
     class Meta:
         model = PropertyFacility
-        fields = ["property_id", "facility_id", "facility"]
+        fields = ["property_id", "facility_id", "facility","facilities"]
 
 class PaymentPlanValueSerializer(serializers.ModelSerializer):
     payment_object = serializers.SerializerMethodField()
