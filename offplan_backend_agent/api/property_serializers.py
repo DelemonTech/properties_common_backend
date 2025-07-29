@@ -170,7 +170,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     district = DistrictSerializer()
     developer = DeveloperCompanySerializer()
     property_images = PropertyImageSerializer(many=True)
-    facilities = FacilitySerializer(many=True)
+    facilities = PropertyFacilitySerializer(many=True)
     grouped_apartments = GroupedApartmentSerializer(many=True)
     payment_plans = PaymentPlanSerializer(many=True)
     property_units = PropertyUnitSerializer(many=True, read_only=True)  # ✅ Add this
@@ -215,7 +215,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     property_units = PropertyUnitSerializer(many=True, read_only=True)
     grouped_apartments = GroupedApartmentSerializer(many=True, read_only=True)
-    facilities = FacilitySerializer(many=True, read_only=True)
+    facilities = PropertyFacilitySerializer(many=True, read_only=True)
     payment_plans = PaymentPlanSerializer(many=True, read_only=True)
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
@@ -242,6 +242,10 @@ class PropertySerializer(serializers.ModelSerializer):
             'district',
             'developer',
             'subunit_count',  
+            'property_units',
+            'grouped_apartments',
+            'facilities',
+            'payment_plans',
             
         ]
     
