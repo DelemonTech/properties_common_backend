@@ -82,30 +82,49 @@ class PropertyImageSerializer(serializers.ModelSerializer):
         model = PropertyImage
         fields = ["image", "property_id", "type"]
 
-class FacilityNameSerializer(serializers.ModelSerializer):
-    facilities = serializers.SerializerMethodField()
-    class Meta:
-        model = Facility  # define this model if not already
-        fields = ["id", "name","facilities"]
-    def get_facilities(self,obj):
-        return{
-            "en":obj.name,
-            "ar":obj.ar_facility,
-            "fa":obj.fa_facility,
-        }
+# class FacilityNameSerializer(serializers.ModelSerializer):
+#     facilities = serializers.SerializerMethodField()
+#     class Meta:
+#         model = Facility  # define this model if not already
+#         fields = ["id", "name","facilities"]
+#     def get_facilities(self,obj):
+#         return{
+#             "en":obj.name,
+#             "ar":obj.ar_facility,
+#             "fa":obj.fa_facility,
+#         }
 
-# class PropertyFacilitySerializer(serializers.ModelSerializer):
-#     facility = FacilityNameSerializer()
+# # class PropertyFacilitySerializer(serializers.ModelSerializer):
+# #     facility = FacilityNameSerializer()
 
+# #     class Meta:
+# #         model = PropertyFacility
+# #         fields = ["property_id", "facility_id", "facility"]
+
+# class FacilitySerializer(serializers.ModelSerializer):
+#     facilities=FacilityNameSerializer(many=True)
 #     class Meta:
 #         model = PropertyFacility
-#         fields = ["property_id", "facility_id", "facility"]
+#         fields = ["property_id", "facility_id", "facility","facilities"]
+class FacilityNameSerializer(serializers.ModelSerializer):
+    facilities = serializers.SerializerMethodField()
 
-class FacilitySerializer(serializers.ModelSerializer):
-    facilities=FacilityNameSerializer(many=True)
+    class Meta:
+        model = Facility
+        fields = ["id", "name", "facilities"]
+
+    def get_facilities(self, obj):
+        return {
+            "en": obj.name,
+            "ar": obj.ar_facility,
+            "fa": obj.fa_facility,
+        }
+class PropertyFacilitySerializer(serializers.ModelSerializer):
+    facility = FacilityNameSerializer(read_only=True)
+
     class Meta:
         model = PropertyFacility
-        fields = ["property_id", "facility_id", "facility","facilities"]
+        fields = ["property_id", "facility_id", "facility"]
 
 class PaymentPlanValueSerializer(serializers.ModelSerializer):
     payment_object = serializers.SerializerMethodField()
