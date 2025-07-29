@@ -107,18 +107,20 @@ class PropertyImageSerializer(serializers.ModelSerializer):
 #         model = PropertyFacility
 #         fields = ["property_id", "facility_id", "facility","facilities"]
 class FacilityNameSerializer(serializers.ModelSerializer):
-    facilities = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = Facility
-        fields = ["id", "name", "facilities"]
+        fields = ["id", "name"]
 
-    def get_facilities(self, obj):
+    def get_name(self, obj):
         return {
             "en": obj.name,
-            "ar": obj.ar_facility,
-            "fa": obj.fa_facility,
+            "ar": obj.ar_facility or obj.name,
+            "fa": obj.fa_facility or obj.name,
         }
+
+
 class PropertyFacilitySerializer(serializers.ModelSerializer):
     facility = FacilityNameSerializer(read_only=True)
 
@@ -127,12 +129,12 @@ class PropertyFacilitySerializer(serializers.ModelSerializer):
         fields = ["property_id", "facility_id", "facility"]
 
 class PaymentPlanValueSerializer(serializers.ModelSerializer):
-    payment_object = serializers.SerializerMethodField()
+    values = serializers.SerializerMethodField()
     class Meta:
         model = PaymentPlanValue
-        fields = ["id", "property_payment_plan_id", "name", "value","payment_object"]
+        fields = ["id", "property_payment_plan_id", "name", "value","values"]
         
-    def get_payment_object(self,obj):
+    def get_values(self,obj):
         return{
             "en":obj.name,
             "ar":obj.ar_value_name,
@@ -160,9 +162,23 @@ class PaymentPlanSerializer(serializers.ModelSerializer):
             "fa":obj.fa_plan_desc,
         }
 class GroupedApartmentSerializer(serializers.ModelSerializer):
+    rooms = serializers.SerializerMethodField()
+    unit_type = serializers.SerializerMethodField()
     class Meta:
         model = GroupedApartment
-        fields = ['id', 'unit_type', 'rooms', 'min_price', 'min_area','ar_unit_type','fa_unit_type',]
+        fields = ['id', 'unit_type', 'rooms', 'min_price', 'min_area']
+    def get_rooms(self,obj):
+        return{
+            "en":obj.rooms,
+            "ar":obj.ar_rooms,
+            "fa":obj.fa_rooms,
+        }
+    def get_unit_type(self,obj):
+        return{
+            "en":obj.unit_type,
+            "ar":obj.ar_unit_type,
+            "fa":obj.fa_unit_type,
+        }
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):
@@ -170,7 +186,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     district = DistrictSerializer()
     developer = DeveloperCompanySerializer()
     property_images = PropertyImageSerializer(many=True)
-    facilities = PropertyFacilitySerializer(many=True)
+    facilities = FacilityNameSerializer(many=True)
     grouped_apartments = GroupedApartmentSerializer(many=True)
     payment_plans = PaymentPlanSerializer(many=True)
     property_units = PropertyUnitSerializer(many=True, read_only=True)  # ✅ Add this
@@ -215,7 +231,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     property_units = PropertyUnitSerializer(many=True, read_only=True)
     grouped_apartments = GroupedApartmentSerializer(many=True, read_only=True)
-    facilities = PropertyFacilitySerializer(many=True, read_only=True)
+    facilities = FacilityNameSerializer(many=True, read_only=True)
     payment_plans = PaymentPlanSerializer(many=True, read_only=True)
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()

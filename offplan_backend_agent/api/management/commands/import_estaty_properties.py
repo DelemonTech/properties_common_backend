@@ -317,14 +317,27 @@ class Command(BaseCommand):
             )
 
             # Facilities (safe get by ID only)
+            # prop.facilities.clear()
+            # for f in data.get("property_facilities", []):
+            #     f_data = f.get("facility", {})
+            #     f_id = f_data.get("id")
+            #     if f_id:
+            #         facility = Facility.objects.filter(id=f_id).first()
+            #         if facility:
+            #             prop.facilities.add(facility)
+            #         print(prop.facilities,'facility')
+            all_facilities = {f.id: f for f in Facility.objects.all()}
             prop.facilities.clear()
+
             for f in data.get("property_facilities", []):
                 f_data = f.get("facility", {})
                 f_id = f_data.get("id")
-                if f_id:
-                    facility = Facility.objects.filter(id=f_id).first()
-                    if facility:
-                        prop.facilities.add(facility)
+                facility = all_facilities.get(f_id)
+                if facility:
+                    prop.facilities.add(facility)
+                    print(f"✅ Added: {facility.name}")
+                else:
+                    print(f"❌ Facility with ID {f_id} not found")
 
             # Grouped Apartments
             prop.grouped_apartments.all().delete()
