@@ -36,11 +36,11 @@ class PropertyUnitSerializer(serializers.ModelSerializer):
 
 # Define nested serializers if not already present
 class CitySerializer(serializers.ModelSerializer):
-    city = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     class Meta:
         model = City
-        fields = ["id", "name",'city']
-    def get_city(self,obj):
+        fields = ["id", "name"]
+    def get_name(self,obj):
         return{
             "en":obj.name,
             "ar":obj.arabic_city_name,
@@ -48,11 +48,11 @@ class CitySerializer(serializers.ModelSerializer):
         }
 
 class DistrictSerializer(serializers.ModelSerializer):
-    district = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     class Meta:
         model = District
-        fields = ["id", "name","district"]
-    def get_district(self,obj):
+        fields = ["id", "name"]
+    def get_name(self,obj):
         return{
             "en":obj.name,
             "ar":obj.arabic_dist_name,
@@ -65,11 +65,11 @@ class DeveloperCompanySerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
         
 class SalesStatusSerializer(serializers.ModelSerializer):
-    sales_status = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     class Meta:
         model = SalesStatus
-        fields = ["id", "name","sales_status"]
-    def get_sales_status(self,obj):
+        fields = ["id", "name"]
+    def get_name(self,obj):
         return{
             "en":obj.name,
             "ar":obj.ar_sales_status,
