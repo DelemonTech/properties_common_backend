@@ -4,11 +4,27 @@ from itertools import chain
 from django.core.management.base import BaseCommand
 from deep_translator import GoogleTranslator
 from api.models import *
+from bs4 import BeautifulSoup
+import html
+
+
+# def clean_text(text):
+#     # Remove everything except letters, numbers, and spaces
+#     return re.sub(r'[^\w\s]', '', text).strip()
 
 
 def clean_text(text):
-    # Remove everything except letters, numbers, and spaces
-    return re.sub(r'[^\w\s]', '', text).strip()
+    # Remove HTML tags
+    soup = BeautifulSoup(text, "html.parser")
+    stripped = soup.get_text(separator=" ", strip=True)
+
+    # Unescape HTML entities like &nbsp;, &rsquo;
+    unescaped = html.unescape(stripped)
+
+    # Normalize whitespace
+    cleaned = ' '.join(unescaped.split())
+
+    return cleaned
 
 
 class Command(BaseCommand):
@@ -31,26 +47,25 @@ class Command(BaseCommand):
             try:
                 updated = False
 
-                if not prop.arabic_title and prop.title:
-                    cleaned_title = clean_text(prop.title)
+                cleaned_title = clean_text(prop.title) if prop.title else None
+                cleaned_desc = clean_text(prop.description) if prop.description else None
+
+                if  prop.arabic_title and cleaned_title:
                     prop.arabic_title = ar_translator.translate(cleaned_title)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.farsi_title and prop.title:
-                    cleaned_title = clean_text(prop.title)
+                if  prop.farsi_title and cleaned_title:
                     prop.farsi_title = fa_translator.translate(cleaned_title)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.arabic_desc and prop.description:
-                    cleaned_desc = clean_text(prop.description)
+                if  prop.arabic_desc and cleaned_desc:
                     prop.arabic_desc = ar_translator.translate(cleaned_desc)
                     updated = True
                     time.sleep(1.2)
 
-                if not prop.farsi_desc and prop.description:
-                    cleaned_desc = clean_text(prop.description)
+                if  prop.farsi_desc and cleaned_desc:
                     prop.farsi_desc = fa_translator.translate(cleaned_desc)
                     updated = True
                     time.sleep(1.2)
@@ -63,6 +78,43 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"❌ Error on Property ID {prop.id}: {e}"))
+
+        # for prop in properties:
+        #     try:
+        #         updated = False
+
+        #         if not prop.arabic_title and prop.title:
+        #             cleaned_title = clean_text(prop.title)
+        #             prop.arabic_title = ar_translator.translate(cleaned_title)
+        #             updated = True
+        #             time.sleep(1.2)
+
+        #         if not prop.farsi_title and prop.title:
+        #             cleaned_title = clean_text(prop.title)
+        #             prop.farsi_title = fa_translator.translate(cleaned_title)
+        #             updated = True
+        #             time.sleep(1.2)
+
+        #         if not prop.arabic_desc and prop.description:
+        #             cleaned_desc = clean_text(prop.description)
+        #             prop.arabic_desc = ar_translator.translate(cleaned_desc)
+        #             updated = True
+        #             time.sleep(1.2)
+
+        #         if not prop.farsi_desc and prop.description:
+        #             cleaned_desc = clean_text(prop.description)
+        #             prop.farsi_desc = fa_translator.translate(cleaned_desc)
+        #             updated = True
+        #             time.sleep(1.2)
+
+        #         if updated:
+        #             prop.save()
+        #             self.stdout.write(self.style.SUCCESS(f"✅ Translated Property: {prop.id} - {prop.title}"))
+        #         else:
+        #             self.stdout.write(f"⏭ Skipped Property: {prop.id} - Already translated")
+
+        #     except Exception as e:
+        #         self.stderr.write(self.style.ERROR(f"❌ Error on Property ID {prop.id}: {e}"))
 
         # Translate Cities
         for city in City.objects.all():
