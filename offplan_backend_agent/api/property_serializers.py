@@ -229,6 +229,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
 #         fields = '__all__'
 
 class PropertySerializer(serializers.ModelSerializer):
+    city = CitySerializer()
     property_units = PropertyUnitSerializer(many=True, read_only=True)
     grouped_apartments = GroupedApartmentSerializer(many=True, read_only=True)
     facilities = FacilityNameSerializer(many=True, read_only=True)
