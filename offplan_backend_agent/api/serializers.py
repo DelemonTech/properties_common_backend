@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import AgentDetails, Property
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack, PropertyUnit
+from .models import AgentDetails, BlogPost, Property
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
 from django.db.models import Sum
 
 
@@ -25,8 +25,9 @@ from django.db.models import Sum
 
 
 class DistrictSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
     class Meta:
+        model = District
+        fields = ['id', 'name', 'arabic_dist_name', 'farsi_dist_name']
         model = District
         fields = ['id', 'name']
     
@@ -55,6 +56,7 @@ class CitySerializer(serializers.ModelSerializer):
 class CitySerializerWithDistricts(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     districts = DistrictSerializer(many=True, read_only=True)
+
     
     class Meta:
         model = City
@@ -68,6 +70,9 @@ class CitySerializerWithDistricts(serializers.ModelSerializer):
         }
     
     
+        model = City
+        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name', 'districts']
+
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = DeveloperCompany
@@ -204,4 +209,9 @@ class ReserveNowSerializer(serializers.ModelSerializer):
 class RequestCallSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestCallBack
+        fields = '__all__'
+
+class BlogPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogPost
         fields = '__all__'

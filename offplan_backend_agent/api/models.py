@@ -269,3 +269,34 @@ class RequestCallBack(models.Model):
     name = models.CharField(max_length=255, null=True)
     phone_number = models.CharField(max_length=20,null=True)
     email = models.EmailField(max_length=30, null=True)
+
+class BlogPost(models.Model):
+    property = models.ForeignKey('Property', on_delete=models.CASCADE, related_name='blogs')
+
+    # ENGLISH
+    title = models.CharField(max_length=255)
+    excerpt = models.TextField(blank=True, null=True)
+    content = models.TextField()
+    meta_title = models.CharField(max_length=255, blank=True, null=True)
+    meta_description = models.CharField(max_length=255, blank=True, null=True)
+
+    # (auto generated)
+    title_ar = models.CharField(max_length=255, blank=True, null=True)
+    excerpt_ar = models.TextField(blank=True, null=True)
+    content_ar = models.TextField(blank=True, null=True)
+    meta_title_ar = models.CharField(max_length=255, blank=True, null=True)
+    meta_description_ar = models.CharField(max_length=255, blank=True, null=True)
+
+    title_fa = models.CharField(max_length=255, blank=True, null=True)
+    excerpt_fa = models.TextField(blank=True, null=True)
+    content_fa = models.TextField(blank=True, null=True)
+    meta_title_fa = models.CharField(max_length=255, blank=True, null=True)
+    meta_description_fa = models.CharField(max_length=255, blank=True, null=True)
+
+    image = models.ImageField(upload_to='blogs/')
+    author = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

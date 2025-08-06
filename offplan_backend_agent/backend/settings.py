@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "rest_framework",
     'api',  # Your app for agent management
+    'api.blog',
     'drf_yasg',
     "corsheaders",
 ]
