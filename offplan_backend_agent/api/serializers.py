@@ -1,71 +1,73 @@
 from rest_framework import serializers
 from .models import AgentDetails, Property
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack, PropertyUnit
 from django.db.models import Sum
 
-class CitySerializerWithDistricts(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    districts = serializers.SerializerMethodField()
 
-    class Meta:
-        model = City
-        fields = ["id", "name", "districts"]
+# class CitySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = City
+#         fields = ["id", "name", "farsi_city_name", "arabic_city_name"]
 
-    def get_name(self, obj):
-        return {
-            "en": obj.name,
-            "fa": obj.farsi_city_name,
-            "ar": obj.arabic_city_name
-        }
+# class DistrictSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = District
+#         fields = ["id", "name", "farsi_dist_name", "arabic_dist_name"]
 
-    def get_districts(self, obj):
-        return [
-            {
-                "id": district.id,
-                "name": {
-                    "en": district.name,
-                    "fa": district.farsi_dist_name,
-                    "ar": district.arabic_dist_name
-                }
-            }
-            for district in obj.districts.all()
-        ]
+# class CitySerializerWithDistricts(serializers.ModelSerializer):
+#     districts = DistrictSerializer(many=True, read_only=True)
 
+#     class Meta:
+#         model = City
+#         fields = ["id", "name", "farsi_city_name", "arabic_city_name", "districts"]
+    # def get_districts(self,obj):
+    #     return [district.name for district in obj.districts.all()] 
 
-class CitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = City
-        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name']
-
-class CitySerializerWithDistricts(serializers.ModelSerializer):
-    districts = DistrictSerializer(many=True, read_only=True)
 
 class DistrictSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
-    city = serializers.SerializerMethodField()
-
     class Meta:
         model = District
-        fields = ["id", "name", "city"]
-
+        fields = ['id', 'name']
+    
     def get_name(self, obj):
         return {
-            "en": obj.name,
-            "fa": obj.farsi_dist_name,
-            "ar": obj.arabic_dist_name
+            "en": obj.name or "",
+            "ar": obj.arabic_dist_name or "",
+            "fa": obj.farsi_dist_name or "",
         }
 
-    def get_city(self, obj):
-        return {
-            "id": obj.city.id,
-            "name": {
-                "en": obj.city.name,
-                "fa": obj.city.farsi_city_name,
-                "ar": obj.city.arabic_city_name
-            }
+class CitySerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = City
+        fields = ['id', 'name', ]
+    def get_name(self,obj):
+        return{
+            "en":obj.name,
+            "ar":obj.arabic_city_name,
+            "fa":obj.farsi_city_name,
         }
+    
+   
 
-
+class CitySerializerWithDistricts(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    districts = DistrictSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = City
+        fields = ['id', 'name', 'districts']
+        
+    def get_name (self,obj):
+        return{
+            "en":obj.name,
+            "ar":obj.arabic_city_name,
+            "fa":obj.farsi_city_name,
+        }
+    
+    
 class DeveloperCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = DeveloperCompany
@@ -76,6 +78,7 @@ class PropertySerializer(serializers.ModelSerializer):
     district = DistrictSerializer()
     developer = DeveloperCompanySerializer()
     subunit_count = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -84,29 +87,99 @@ class PropertySerializer(serializers.ModelSerializer):
             "delivery_date", "min_area", "low_price",
             "property_type", "property_status", "sales_status",
             "updated_at", "city", "district", "developer","subunit_count",
-            "arabic_title","arabic_desc","farsi_title","farsi_desc",
+           
         ]
-    
+    def get_title(self, obj):
+        return {
+            "en": obj.title or "",
+            "ar": obj.arabic_title or "",
+            "fa": obj.farsi_title or "",
+        }
     def get_subunit_count(self, obj):
+        # Fetch the annotated count
         total_subunits = getattr(obj, "subunit_count", None)
         if total_subunits is None:
-            # fallback if not annotated
-            total_subunits = obj.property_units.aggregate(
-                total=Sum('unit_count')
-            )['total'] or 0
+            total_subunits = PropertyUnit.objects.filter(
+                property=obj
+            ).aggregate(total=Sum('unit_count'))['total'] or 0
 
+        # Format count and translated label
         if total_subunits <= 1:
-            return "1 unit"
+            value = 1
+            label_en = "unit"
+            label_ar = "وحدة"
+            label_fa = "واحد"
         elif total_subunits > 9:
-            return "9+ units"
+            value = "9+"
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
         else:
-            return f"{total_subunits} units"
+            value = total_subunits
+            label_en = "units"
+            label_ar = "وحدات"
+            label_fa = "واحدها"
 
+        return {
+            "value": value,
+            "label": {
+                "en": label_en,
+                "ar": label_ar,
+                "fa": label_fa,
+            },
+        }
+
+    # def get_subunit_count(self, obj):
+    #     request = self.context.get("request")
+    #     lang = request.query_params.get("lang") if request else "en"
+    #     total_subunits = getattr(obj, "subunit_count", None)
+    #     if total_subunits is None:
+    #         # fallback if not annotated
+    #         total_subunits = obj.property_units.aggregate(
+    #             total=Sum('unit_count')
+    #         )['total'] or 0
+    #     unit_labels = {
+    #         "en": ("unit", "units"),
+    #         "ar": ("وحدة", "وحدات"),
+    #         "fa": ("واحد", "واحدها"),
+    #     }
+
+    #     singular, plural = unit_labels.get(lang, unit_labels["en"])
+
+    #     if total_subunits <= 1:
+    #         return f"1 {singular}"
+    #     elif total_subunits > 9:
+    #         return f"9+ {plural}"
+    #     else:
+    #         return f"{total_subunits} {plural}"
+
+    #     # if total_subunits <= 1:
+    #     #     return "1 unit"
+    #     # elif total_subunits > 9:
+    #     #     return "9+ units"
+    #     # else:
+    #     #     return f"{total_subunits} units"
+    
+    
 
 class AgentDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     class Meta:
         model = AgentDetails
         fields = '__all__'
+    def get_name(self,obj):
+        return{
+            "en":obj.name,
+            "ar":obj.ar_name,
+            "fa":obj.fa_name,
+        }
+    def get_description(self, obj):
+        return {
+            "en": obj.description,
+            "ar": obj.ar_description,
+            "fa": obj.fa_description,
+        }
 
 class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:

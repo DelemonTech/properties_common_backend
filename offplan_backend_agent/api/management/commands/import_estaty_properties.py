@@ -240,13 +240,24 @@ class Command(BaseCommand):
 
         # District
         district_data = data.get("district") or {}
-        district, _ = District.objects.update_or_create(
-            id=district_data.get("id"),
+        district_id = district_data.get("id")
+        if not district_id:
+            log.warning(f"⚠️ Skipping property due to missing district ID: {district_data}")
+            return None  # or continue
+
+        District.objects.filter(id=district_id).update(
+            name=district_data.get("name") or "Unnamed District",
+            city=city
+        )
+
+        district, created = District.objects.get_or_create(
+            id=district_id,
             defaults={
                 "name": district_data.get("name") or "Unnamed District",
-                "city": city  # Link to the above city
+                "city": city
             }
         )
+        
 
         # Property Type
         prop_type_data = data.get("property_type") or {}
@@ -306,14 +317,27 @@ class Command(BaseCommand):
             )
 
             # Facilities (safe get by ID only)
+            # prop.facilities.clear()
+            # for f in data.get("property_facilities", []):
+            #     f_data = f.get("facility", {})
+            #     f_id = f_data.get("id")
+            #     if f_id:
+            #         facility = Facility.objects.filter(id=f_id).first()
+            #         if facility:
+            #             prop.facilities.add(facility)
+            #         print(prop.facilities,'facility')
+            all_facilities = {f.id: f for f in Facility.objects.all()}
             prop.facilities.clear()
+
             for f in data.get("property_facilities", []):
                 f_data = f.get("facility", {})
                 f_id = f_data.get("id")
-                if f_id:
-                    facility = Facility.objects.filter(id=f_id).first()
-                    if facility:
-                        prop.facilities.add(facility)
+                facility = all_facilities.get(f_id)
+                if facility:
+                    prop.facilities.add(facility)
+                    print(f"✅ Added: {facility.name}")
+                else:
+                    print(f"❌ Facility with ID {f_id} not found")
 
             # Grouped Apartments
             prop.grouped_apartments.all().delete()
