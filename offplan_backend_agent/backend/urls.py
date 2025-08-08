@@ -52,10 +52,10 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
-    # path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
-    re_path(r'^(?P<username>[\w-]+)/$', agent_meta_view),
+    # re_path(r'^(?P<username>[\w-]+)/$', agent_meta_view),
 
     # Swagger routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
