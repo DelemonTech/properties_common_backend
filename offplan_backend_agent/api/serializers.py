@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AgentDetails, BlogPost, Property
+from .models import AgentDetails, BlogPost, Property, PropertyUnit
 from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
 from django.db.models import Sum
 
@@ -212,6 +212,16 @@ class RequestCallSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BlogPostSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = BlogPost
         fields = '__all__'
+    
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None

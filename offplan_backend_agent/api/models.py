@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.text import slugify
+from storages.backends.s3boto3 import S3Boto3Storage
 
 class City(models.Model):
     name = models.CharField(max_length=100)
@@ -270,8 +272,11 @@ class RequestCallBack(models.Model):
     phone_number = models.CharField(max_length=20,null=True)
     email = models.EmailField(max_length=30, null=True)
 
+def upload_to_blogs(instance, filename):
+        return f"uploads/{filename}"
+
 class BlogPost(models.Model):
-    property = models.ForeignKey('Property', on_delete=models.CASCADE, related_name='blogs')
+    # property = models.ForeignKey('Property', on_delete=models.CASCADE, related_name='blogs')
 
     # ENGLISH
     title = models.CharField(max_length=255)
@@ -280,23 +285,57 @@ class BlogPost(models.Model):
     meta_title = models.CharField(max_length=255, blank=True, null=True)
     meta_description = models.CharField(max_length=255, blank=True, null=True)
 
-    # (auto generated)
+    # ARABIC (auto generated)
     title_ar = models.CharField(max_length=255, blank=True, null=True)
     excerpt_ar = models.TextField(blank=True, null=True)
     content_ar = models.TextField(blank=True, null=True)
     meta_title_ar = models.CharField(max_length=255, blank=True, null=True)
     meta_description_ar = models.CharField(max_length=255, blank=True, null=True)
 
+    # FARSI (auto generated)
     title_fa = models.CharField(max_length=255, blank=True, null=True)
     excerpt_fa = models.TextField(blank=True, null=True)
     content_fa = models.TextField(blank=True, null=True)
     meta_title_fa = models.CharField(max_length=255, blank=True, null=True)
     meta_description_fa = models.CharField(max_length=255, blank=True, null=True)
 
-    image = models.ImageField(upload_to='blogs/')
+    image = models.ImageField(storage=S3Boto3Storage(), upload_to='', blank=True, null=True)
     author = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True, max_length=300)  # Added blank=True
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Auto-generate slug from title if not provided
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+            
+            # Ensure uniqueness by appending numbers if needed
+            while BlogPost.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            self.slug = slug
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Blog Post"
+        verbose_name_plural = "Blog Posts"
+    
+    
+# models.py - Add this temporarily
+class TestUpload(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.ImageField(blank=True, null=True)  # No upload_to specified
+    
+    def __str__(self):
+        return self.title
+
+
+    

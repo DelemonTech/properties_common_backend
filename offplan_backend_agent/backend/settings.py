@@ -15,10 +15,74 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+DEBUG=True
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+# If you need CORS for frontend access
+AWS_S3_CORS = [
+    {
+        'AllowedOrigins': ['*'],
+        'AllowedMethods': ['GET', 'POST', 'PUT'],
+        'AllowedHeaders': ['*'],
+    }
+]
+
+# AWS S3 Configuration - Force global endpoint
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = 'us-east-1'  # Force us-east-1 for global endpoint
+
+# Force specific S3 settings for problematic buckets
+AWS_S3_ADDRESSING_STYLE = 'path'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_CUSTOM_DOMAIN = None
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_URL_PROTOCOL = 'https:'
+
+# Explicit endpoint configuration
+AWS_S3_ENDPOINT_URL = 'https://s3.amazonaws.com'
+
+# Storage backends
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
+
+AWS_LOCATION = 'uploads'
+
+# URL configuration
+MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
+
+# settings.py - Add detailed logging for admin
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.contrib.admin': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'storages': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+# Also add this for more verbose S3 operations
+AWS_S3_FILE_OVERWRITE = True  # Temporarily for testing
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -70,6 +134,7 @@ INSTALLED_APPS = [
     'api.blog',
     'drf_yasg',
     "corsheaders",
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -166,7 +231,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-DEBUG=True
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
