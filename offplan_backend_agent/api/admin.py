@@ -1,14 +1,23 @@
+# Updated admin.py
 from django.contrib import admin
 from .models import BlogPost
-from django.utils.html import format_html
+from django.utils.html import format_html, strip_tags
+from .models import Contact
 
 @admin.register(BlogPost)
 class BlogPostAdmin(admin.ModelAdmin):
-    list_display = ['title', 'author', 'created_at', 'slug', 'image_tag']
+    list_display = ['title', 'author', 'created_at', 'slug', 'content_preview', 'image_tag']
     list_filter = ['author', 'created_at']
     search_fields = ['title', 'excerpt', 'author']
-    prepopulated_fields = {"slug": ("title",)}  # Auto-populate slug in admin
+    prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ['created_at']
+
+    def content_preview(self, obj):
+        """Show a preview of the rich content"""
+        # Strip HTML tags for preview in admin list
+        plain_text = strip_tags(obj.content)
+        return plain_text[:100] + "..." if len(plain_text) > 100 else plain_text
+    content_preview.short_description = "Content Preview"
 
     def image_tag(self, obj):
         if obj.image:
@@ -18,7 +27,13 @@ class BlogPostAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'slug', 'excerpt', 'content', 'image', 'author')
+            'fields': ('title', 'slug', 'author', 'image'),
+            'classes': ('wide',)
+        }),
+        ('Content', {
+            'fields': ('excerpt', 'content'),
+            'classes': ('wide',),
+            'description': 'Rich text fields with formatting support'
         }),
         ('SEO', {
             'fields': ('meta_title', 'meta_description'),
@@ -26,14 +41,28 @@ class BlogPostAdmin(admin.ModelAdmin):
         }),
         ('Arabic Translation', {
             'fields': ('title_ar', 'excerpt_ar', 'content_ar', 'meta_title_ar', 'meta_description_ar'),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': 'Auto-generated Arabic translations'
         }),
         ('Farsi Translation', {
             'fields': ('title_fa', 'excerpt_fa', 'content_fa', 'meta_title_fa', 'meta_description_fa'),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': 'Auto-generated Farsi translations'
         }),
         ('Timestamps', {
             'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )
+
+    class Media:
+        css = {
+            'all': ('admin/css/blog-admin.css',)
+        }
+
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    # Django admin automatically queries the database using Django ORM
+    # No API calls needed - direct database access
+    list_display = ['name', 'email', 'phone_number', 'created_at']
+    # This uses: Contact.objects.all() internally

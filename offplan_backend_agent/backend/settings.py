@@ -147,7 +147,52 @@ INSTALLED_APPS = [
     'corsheaders',
     'storages',
     'ckeditor',
+    'tinymce',
 ]
+
+TINYMCE_DEFAULT_CONFIG = {
+    'height': 400,
+    'width': '100%',
+    'cleanup_on_startup': True,
+    'custom_undo_redo_levels': 20,
+    'selector': 'textarea',
+    'plugins': '''
+        textcolor save link image media preview codesample contextmenu
+        table code lists fullscreen insertdatetime nonbreaking
+        contextmenu directionality searchreplace wordcount visualblocks
+        visualchars code fullscreen autolink lists charmap print hr
+        anchor pagebreak spellchecker paste
+    ''',
+    'toolbar1': '''
+        fullscreen preview bold italic underline | fontselect fontsizeselect |
+        forecolor backcolor | alignleft alignright aligncenter alignjustify |
+        indent outdent | bullist numlist table | link image media | code
+    ''',
+    'toolbar2': '''
+        visualblocks visualchars | charmap hr pagebreak nonbreaking anchor |
+        searchreplace wordcount | undo redo
+    ''',
+    'contextmenu': 'formats | link image',
+    'menubar': True,
+    'statusbar': True,
+    'paste_data_images': True,
+    'paste_as_text': False,
+    'paste_auto_cleanup_on_paste': False,  # Keep formatting when pasting
+    'paste_remove_styles': False,  # Don't remove styles
+    'paste_remove_styles_if_webkit': False,
+    'paste_strip_class_attributes': False,
+    'paste_retain_style_properties': 'all',  # Retain all style properties
+    'valid_elements': '*[*]',  # Allow all HTML elements and attributes
+    'extended_valid_elements': '*[*]',
+    'forced_root_block': '',  # Don't force paragraphs
+    'force_p_newlines': False,  # Don't force P tags
+    'formats': {
+        'bold': {'inline': 'strong'},
+        'italic': {'inline': 'em'},
+        'underline': {'inline': 'u', 'exact': True},
+        'strikethrough': {'inline': 'del'},
+    },
+}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

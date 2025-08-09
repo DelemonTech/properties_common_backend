@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from storages.backends.s3boto3 import S3Boto3Storage
-from ckeditor_uploader.fields import RichTextUploadingField
+from tinymce.models import HTMLField 
 
 class City(models.Model):
     name = models.CharField(max_length=100)
@@ -277,23 +277,21 @@ def upload_to_blogs(instance, filename):
         return f"uploads/{filename}"
 
 class BlogPost(models.Model):
-    # property = models.ForeignKey('Property', on_delete=models.CASCADE, related_name='blogs')
-
-    # ENGLISH
+    # ENGLISH - Use HTMLField for rich content
     title = models.CharField(max_length=255)
-    excerpt = models.TextField(blank=True, null=True)
-    content = RichTextUploadingField(config_name='default')
+    excerpt = HTMLField(blank=True, null=True, help_text="Rich text excerpt")
+    content = HTMLField(help_text="Rich text content with HTML formatting")  # Changed to HTMLField
     meta_title = models.CharField(max_length=255, blank=True, null=True)
     meta_description = models.CharField(max_length=255, blank=True, null=True)
 
-    # ARABIC (auto generated)
+    # ARABIC (auto generated) - Keep as TextField since these are auto-translated
     title_ar = models.CharField(max_length=255, blank=True, null=True)
     excerpt_ar = models.TextField(blank=True, null=True)
     content_ar = models.TextField(blank=True, null=True)
     meta_title_ar = models.CharField(max_length=255, blank=True, null=True)
     meta_description_ar = models.CharField(max_length=255, blank=True, null=True)
 
-    # FARSI (auto generated)
+    # FARSI (auto generated) - Keep as TextField since these are auto-translated
     title_fa = models.CharField(max_length=255, blank=True, null=True)
     excerpt_fa = models.TextField(blank=True, null=True)
     content_fa = models.TextField(blank=True, null=True)
@@ -302,7 +300,7 @@ class BlogPost(models.Model):
 
     image = models.ImageField(storage=S3Boto3Storage(), upload_to='', blank=True, null=True)
     author = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, blank=True, max_length=300)  # Added blank=True
+    slug = models.SlugField(unique=True, blank=True, max_length=300)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
