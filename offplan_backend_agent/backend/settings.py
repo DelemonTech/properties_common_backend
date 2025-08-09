@@ -56,6 +56,9 @@ DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
 
 AWS_LOCATION = 'uploads'
+# CKEditor uploads inside "uploads/content/ckeditor/"
+CKEDITOR_UPLOAD_PATH = "uploads/content/ckeditor/"
+
 
 # URL configuration
 MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
@@ -118,6 +121,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://offplan.market",
 ]
 
+CKEDITOR_CONFIGS = {
+    'default': {
+        'htmlEncodeOutput': False,  # This prevents double encoding
+        'entities': False,
+        'basicEntities': False,
+    }
+}
+
 
 
 # Application definition
@@ -133,8 +144,9 @@ INSTALLED_APPS = [
     'api',  # Your app for agent management
     'api.blog',
     'drf_yasg',
-    "corsheaders",
+    'corsheaders',
     'storages',
+    'ckeditor',
 ]
 
 MIDDLEWARE = [

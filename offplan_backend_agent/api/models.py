@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from storages.backends.s3boto3 import S3Boto3Storage
+from ckeditor_uploader.fields import RichTextUploadingField
 
 class City(models.Model):
     name = models.CharField(max_length=100)
@@ -281,7 +282,7 @@ class BlogPost(models.Model):
     # ENGLISH
     title = models.CharField(max_length=255)
     excerpt = models.TextField(blank=True, null=True)
-    content = models.TextField()
+    content = RichTextUploadingField(config_name='default')
     meta_title = models.CharField(max_length=255, blank=True, null=True)
     meta_description = models.CharField(max_length=255, blank=True, null=True)
 
@@ -327,15 +328,6 @@ class BlogPost(models.Model):
         ordering = ['-created_at']
         verbose_name = "Blog Post"
         verbose_name_plural = "Blog Posts"
-    
-    
-# models.py - Add this temporarily
-class TestUpload(models.Model):
-    title = models.CharField(max_length=100)
-    image = models.ImageField(blank=True, null=True)  # No upload_to specified
-    
-    def __str__(self):
-        return self.title
 
 
     

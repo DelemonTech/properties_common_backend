@@ -37,9 +37,3 @@ class BlogPostAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-# admin.py - Add this
-from .models import TestUpload
-
-@admin.register(TestUpload)
-class TestUploadAdmin(admin.ModelAdmin):
-    list_display = ['title', 'image']
