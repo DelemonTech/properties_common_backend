@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import AgentDetails, BlogPost, Property, PropertyUnit
-from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack
+from api.models import Property, City, District, DeveloperCompany, Consultation, Subscription, Contact, ReserveNow, RequestCallBack, AgentDetailsAdmin
 from django.db.models import Sum
 
 
@@ -225,3 +225,40 @@ class BlogPostSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
         return None
+
+class AgentDetailsFrontendSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+    nationality = serializers.CharField(default="")
+
+    # Non-model fields need to be defined explicitly
+    languages = serializers.ListField(child=serializers.CharField(), default=[])
+    specialties = serializers.ListField(child=serializers.CharField(), default=[])
+    totalSales = serializers.CharField(source='total_business_deals', default=0)
+    responseTime = serializers.CharField(default="")
+    badge = serializers.CharField(default="")
+    color = serializers.CharField(source='color_gradient', default="")
+
+    class Meta:
+        model = AgentDetails
+        fields = [
+            'id',
+            'name',
+            'username',
+            'avatar',
+            'nationality',
+            'languages',
+            'rating',
+            'specialties',
+            'totalSales',
+            'responseTime',
+            'badge',
+            'color'
+        ]
+
+    def get_avatar(self, obj):
+        return f"{obj.profile_image_url}"
+
+    def get_nationality(self, obj):
+        # You'll need to decide how nationality_code is retrieved
+        code = getattr(obj, 'nationality_code', None)
+        return f"https://flagcdn.com/32x24/{code.lower()}.png" if code else None

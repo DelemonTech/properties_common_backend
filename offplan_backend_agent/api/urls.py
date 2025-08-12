@@ -17,6 +17,7 @@ from api.views import AgentListView
 from api.views.contact_enquiry import ContactEnquiryView
 from api.views.reserve_now import ReserveNowView
 from api.views.blogs import BlogPostDetail, BlogPostList
+from api.views.agent_list_frontend import AgentListFrontendView
 
 
 # router = DefaultRouter()
@@ -25,6 +26,7 @@ from api.views.blogs import BlogPostDetail, BlogPostList
 urlpatterns = [
     # path('', include(router.urls)),
     path('agent/<str:username>/', AgentDetailByUsernameView.as_view(), name='agent-detail-by-username'),
+    path("agents/frontend/", AgentListFrontendView.as_view(), name="agent-list-frontend"),
     path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
     path("properties/", PropertyListView.as_view(), name="property-list"),
     path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
