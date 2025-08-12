@@ -1,6 +1,6 @@
 # Updated admin.py
 from django.contrib import admin
-from .models import BlogPost
+from .models import AgentDetails, BlogPost
 from django.utils.html import format_html, strip_tags
 from .models import Contact
 
@@ -66,3 +66,31 @@ class ContactAdmin(admin.ModelAdmin):
     # No API calls needed - direct database access
     list_display = ['name', 'email', 'phone_number', 'created_at']
     # This uses: Contact.objects.all() internally
+
+@admin.register(AgentDetails)
+class AgentDetailsAdmin(admin.ModelAdmin):
+    list_display = ('username', 'name', 'email', 'phone_number', 'gender', 'created_at')
+    list_filter = ('gender', 'created_at')
+    search_fields = ('username', 'name', 'email', 'phone_number')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('username', 'name', 'gender', 'email', 'phone_number', 'whatsapp_number')
+        }),
+        ('Media', {
+            'fields': ('profile_image_url', 'introduction_video_url')
+        }),
+        ('Professional Info', {
+            'fields': ('description', 'years_of_experience', 'total_business_deals', 'rank_top_performing')
+        }),
+        ('Translations', {
+            'fields': ('fa_name', 'fa_description', 'ar_name', 'ar_description'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('created_at',)

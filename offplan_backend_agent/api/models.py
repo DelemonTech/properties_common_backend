@@ -230,6 +230,7 @@ class AgentDetails(models.Model):
         db_table = 'agent_details'
         unique_together = ('id', 'username')
         managed = True  # Ensure True only if Django manages the table
+        verbose_name_plural = "Agent Details"
 
     def __str__(self):
         return self.username

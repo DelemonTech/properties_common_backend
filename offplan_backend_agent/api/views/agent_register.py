@@ -9,23 +9,26 @@ from rest_framework import status  # ✅ Add this
 class AgentRegisterView(generics.CreateAPIView):
     queryset = AgentDetails.objects.all()
     serializer_class = AgentDetailSerializer
-    # permission_classes = [IsAdminFromAuthService]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        
-        if serializer.is_valid():
-            agent = serializer.save()
+        username = request.data.get("username")
+        if not username:
             return Response({
-                "status": True,
-                "message": "Agent registered successfully",
-                "data": AgentDetailSerializer(agent).data,
-                "errors": None
-            }, status=status.HTTP_201_CREATED)
-        
+                "status": False,
+                "message": "Username is required",
+                "data": None,
+                "errors": {"username": ["This field is required."]}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 🚀 Create new or update existing
+        agent, created = AgentDetails.objects.update_or_create(
+            username=username,
+            defaults=request.data
+        )
+
         return Response({
-            "status": False,
-            "message": "Agent registration failed",
-            "data": None,
-            "errors": serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            "status": True,
+            "message": "Agent registered successfully" if created else "Agent updated successfully",
+            "data": AgentDetailSerializer(agent).data,
+            "errors": None
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
