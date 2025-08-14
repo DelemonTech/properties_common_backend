@@ -71,9 +71,9 @@ class SalesStatusSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
     def get_name(self,obj):
         return{
-            "en":obj.name,
-            "ar":obj.ar_sales_status,
-            "fa":obj.fa_sales_status
+            "en":obj.name or "",
+            "ar":obj.ar_sales_status or "",
+            "fa":obj.fa_sales_status or ""
         }
 
 
@@ -230,6 +230,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
 
 class PropertySerializer(serializers.ModelSerializer):
     city = CitySerializer()
+    district = DistrictSerializer()
     property_units = PropertyUnitSerializer(many=True, read_only=True)
     grouped_apartments = GroupedApartmentSerializer(many=True, read_only=True)
     facilities = FacilityNameSerializer(many=True, read_only=True)
