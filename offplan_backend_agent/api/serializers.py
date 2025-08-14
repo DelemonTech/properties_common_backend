@@ -25,12 +25,12 @@ from django.db.models import Sum
 
 
 class DistrictSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = District
-        fields = ['id', 'name', 'arabic_dist_name', 'farsi_dist_name']
-        model = District
-        fields = ['id', 'name']
-    
+        fields = ['id', 'name']  # 'name' now contains multilingual dict
+
     def get_name(self, obj):
         return {
             "en": obj.name or "",
@@ -46,9 +46,9 @@ class CitySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', ]
     def get_name(self,obj):
         return{
-            "en":obj.name,
-            "ar":obj.arabic_city_name,
-            "fa":obj.farsi_city_name,
+            "en":obj.name or "",
+            "ar":obj.arabic_city_name or "",
+            "fa":obj.farsi_city_name or "",
         }
     
    
@@ -81,6 +81,7 @@ class DeveloperCompanySerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     city = CitySerializer()
     district = DistrictSerializer()
+    # print(district)
     developer = DeveloperCompanySerializer()
     subunit_count = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()

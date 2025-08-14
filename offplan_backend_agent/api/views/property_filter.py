@@ -37,7 +37,7 @@ class FilterPropertiesView(APIView):
     )
     def post(self, request):
         data = request.data
-        queryset = Property.objects.all()
+        queryset = Property.objects.all().order_by('-updated_at')
 
         # Existing filters
         if city := data.get("city"):
