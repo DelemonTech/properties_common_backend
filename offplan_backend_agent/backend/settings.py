@@ -140,6 +140,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
     "rest_framework",
     'api',  # Your app for agent management
     'api.blog',
@@ -149,6 +151,8 @@ INSTALLED_APPS = [
     'ckeditor',
     'tinymce',
 ]
+
+SITE_ID=1
 
 TINYMCE_DEFAULT_CONFIG = {
     'height': 400,

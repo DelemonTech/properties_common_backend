@@ -38,6 +38,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import re_path
 from api.views.meta_view import agent_meta_view
+from django.contrib.sitemaps.views import sitemap
+from api.agentsitemap import AgentDetailsSitemap
+from api.blogsitemap import BlogPostSitemap
+from api.homepagesitemap import HomePageSitemap
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -50,9 +54,16 @@ schema_view = get_schema_view(
    authentication_classes=[],
 )
 
+sitemaps_dict = {
+    'home': HomePageSitemap,
+    'blogs': BlogPostSitemap,
+    'agents': AgentDetailsSitemap,
+}
+
 urlpatterns = [
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
     path('admin/', admin.site.urls),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name="django.contrib.sitemaps.views.sitemap",),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
