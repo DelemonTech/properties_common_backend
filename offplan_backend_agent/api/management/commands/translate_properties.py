@@ -4,6 +4,8 @@ from itertools import chain
 from django.core.management.base import BaseCommand
 from api.models import *
 from bs4 import BeautifulSoup
+from deep_translator import GoogleTranslator
+
 import html
 
 
