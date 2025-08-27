@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from api.views import AgentListView
 from django.urls import path, include
+from api.staticpagessitemap import StaticPagesSitemap
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -58,6 +59,7 @@ sitemaps_dict = {
     'home': HomePageSitemap,
     'blogs': BlogPostSitemap,
     'agents': AgentDetailsSitemap,
+    'static': StaticPagesSitemap,
 }
 
 urlpatterns = [
