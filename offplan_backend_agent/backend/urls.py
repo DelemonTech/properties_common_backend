@@ -43,6 +43,14 @@ from django.contrib.sitemaps.views import sitemap
 from api.agentsitemap import AgentDetailsSitemap
 from api.blogsitemap import BlogPostSitemap
 from api.homepagesitemap import HomePageSitemap
+from api.views.meta_view import (
+    agent_meta_view,
+    blogs_listing_meta_view,
+    blog_detail_meta_view,
+    contact_meta_view,
+    about_meta_view,
+)
+
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -65,11 +73,21 @@ sitemaps_dict = {
 urlpatterns = [
     path('', lambda request: HttpResponse("🚀 Offplan Backend is running!")),
     path('admin/', admin.site.urls),
+
+    # SEO meta prerender routes (for crawlers)
+    path('blogs/', blogs_listing_meta_view, name="blogs-listing-meta"),
+    path('blog/<slug:slug>/', blog_detail_meta_view, name="blog-detail-meta"),
+    path('<str:username>/contact/', contact_meta_view, name="contact-meta"),
+    path('<str:username>/about/', about_meta_view, name="about-meta"),
+    path('<str:username>/', agent_meta_view, name="agent-meta"),
+
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name="django.contrib.sitemaps.views.sitemap",),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('api/', include('api.urls')),
     # path('agents/', AgentListView.as_view(), name='agent-list'),
     # re_path(r'^(?P<username>[\w-]+)/$', agent_meta_view),
+
+    
 
     # Swagger routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
