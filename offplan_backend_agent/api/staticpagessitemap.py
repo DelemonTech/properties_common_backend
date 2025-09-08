@@ -5,7 +5,7 @@ class StaticPagesSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        return ['contact', 'about']
+        return ['contact', 'about', 'blogs']  # list of static page slugs
 
     def location(self, obj):
         return f"/{obj}"
