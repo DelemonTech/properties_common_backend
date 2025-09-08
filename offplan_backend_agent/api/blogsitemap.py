@@ -13,4 +13,4 @@ class BlogPostSitemap(Sitemap):
         return obj.created_at
 
     def location(self, obj):
-        return f"/blogs/{obj.slug}"  # Directly return the full path
+        return f"/blog/{obj.slug}"  # Directly return the full path
