@@ -261,6 +261,13 @@ class AgentDetails(models.Model):
     badge_fa = models.TextField(null=True, blank=True)
     badge_ar = models.TextField(null=True, blank=True)
 
+    calendly_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Calendly booking link for this agent"
+    )
+
     class Meta:
         db_table = 'agent_details'
         unique_together = ('id', 'username')
@@ -271,14 +278,14 @@ class AgentDetails(models.Model):
         return self.username
 
 class AgentDetailsAdmin(admin.ModelAdmin):
-    list_display = ('username', 'name', 'email', 'phone_number', 'rating', 'badge', 'color_preview', 'created_at')
+    list_display = ('username', 'name', 'email', 'phone_number', 'rating', 'badge', 'color_preview', 'created_at', 'calendly_url')
     list_filter = ('badge', 'nationality', 'created_at')
     search_fields = ('username', 'name', 'email', 'phone_number')
     ordering = ('-created_at',)
 
     fieldsets = (
         ('Basic Info', {
-            'fields': ('username', 'name', 'gender', 'email', 'phone_number', 'whatsapp_number', 'nationality')
+            'fields': ('username', 'name', 'gender', 'email', 'phone_number', 'whatsapp_number', 'nationality', 'calendly_url')
         }),
         ('Media', {
             'fields': ('profile_image_url', 'introduction_video_url')
