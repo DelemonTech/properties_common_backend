@@ -197,10 +197,10 @@ class AgentDetailsAdmin(admin.ModelAdmin):
             'fields': ('profile_image_url', 'introduction_video_url', 'color_gradient')
         }),
         ('Professional Info', {
-            'fields': ('description', 'specialties', 'nationality', 'languages', 'years_of_experience', 'total_business_deals', 'rank_top_performing', 'rating', 'responseTime', 'badge')
+            'fields': ('description', 'specialties', 'nationality', 'languages', 'years_of_experience', 'total_business_deals', 'rank_top_performing', 'rating', 'responseTime', 'badge', 'calendly_url')
         }),
         ('Translations', {
-            'fields': ('fa_name', 'fa_description', 'ar_name', 'ar_description','specialties_fa','specialties_ar','badge_fa','badge_ar'),
+            'fields': ('fa_name', 'fa_description', 'ar_name', 'ar_description', 'specialties_fa', 'specialties_ar', 'badge_fa', 'badge_ar'),
             'classes': ('collapse',)
         }),
         ('Timestamps', {
