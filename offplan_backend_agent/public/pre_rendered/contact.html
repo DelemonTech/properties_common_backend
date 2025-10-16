@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us</title>
+    <meta name="description" content="Contact page">
+</head>
+<body>
+    <h1>Contact Us</h1>
+    <form action="/api/contact/" method="POST">
+        <label>Name: <input type="text" name="name" required></label><br>
+        <label>Email: <input type="email" name="email" required></label><br>
+        <label>Phone: <input type="text" name="phone_number"></label><br>
+        <label>Message:<br><textarea name="message"></textarea></label><br>
+        <button type="submit">Send</button>
+    </form>
+</body>
+</html>
