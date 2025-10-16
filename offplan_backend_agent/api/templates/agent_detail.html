@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ agent.name }} - Real Estate Agent</title>
+    <meta name="description" content="{{ agent.description|default:'' }}">
+</head>
+<body>
+    <header>
+        <h1>{{ agent.name }}</h1>
+        {% if agent.badge %}<p>Badge: {{ agent.badge }}</p>{% endif %}
+        {% if agent.rating %}<p>Rating: {{ agent.rating }}</p>{% endif %}
+    </header>
+
+    <section>
+        {% if agent.profile_image_url %}
+            <img src="{{ agent.profile_image_url }}" alt="{{ agent.name }}">
+        {% endif %}
+
+        <p>{{ agent.description|default:"No description available" }}</p>
+
+        <ul>
+            {% if agent.whatsapp_number %}<li>WhatsApp: {{ agent.whatsapp_number }}</li>{% endif %}
+            {% if agent.phone_number %}<li>Phone: {{ agent.phone_number }}</li>{% endif %}
+            {% if agent.email %}<li>Email: {{ agent.email }}</li>{% endif %}
+            {% if agent.specialties %}
+                <li>Specialties: {{ agent.specialties|join:", " }}</li>
+            {% endif %}
+        </ul>
+
+        {% if agent.calendly_url %}
+            <a href="{{ agent.calendly_url }}">Book a meeting</a>
+        {% endif %}
+    </section>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Blogs</title>
+    <meta name="description" content="List of all blog posts">
+</head>
+<body>
+    <h1>Blog Posts</h1>
+    <ul>
+        {% for blog in blogs %}
+            <li>
+                <a href="/blog/{{ blog.slug }}">{{ blog.title }}</a>
+                <p>{{ blog.excerpt|truncatewords:30|safe }}</p>
+            </li>
+        {% empty %}
+            <li>No blogs found.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
