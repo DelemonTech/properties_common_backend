@@ -110,10 +110,11 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://54.197.194.173",
+    "https://54.197.194.173",
     "https://offplanmarket.vercel.app",
     "https://offplan-backend.onrender.com",
     "https://offplan.market",
-    "http://54.197.194.173",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -121,7 +122,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # for development
     "https://offplan-backend.onrender.com",
     "https://offplan.market",
-    "http://54.197.194.173/",
+    "http://54.197.194.173",
 ]
 
 CKEDITOR_CONFIGS = {
