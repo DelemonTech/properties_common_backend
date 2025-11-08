@@ -1,3 +1,4 @@
+import os
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_naive
@@ -6,8 +7,11 @@ import requests
 from dateutil import parser as date_parser
 from django.core.management import call_command
 import logging
+from dotenv import load_dotenv
 
-API_KEY = "27b84afeeef929815ab080ae22b29383"
+load_dotenv()
+
+API_KEY = os.getenv("ESTATY_API_KEY")
 DETAIL_URL = "https://panel.estaty.app/api/v1/getProperty"
 HEADERS = {
     "App-key": API_KEY,

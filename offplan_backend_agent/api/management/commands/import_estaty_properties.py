@@ -8,7 +8,11 @@ from dateutil import parser as date_parser
 from django.core.management import call_command
 from typing import Optional
 import json
+import os
+from dotenv import load_dotenv
 from django.db import transaction
+
+load_dotenv()
 
 from api.models import (
     City, District, DeveloperCompany, PropertyType, PropertyStatus, SalesStatus,
@@ -16,7 +20,7 @@ from api.models import (
     PaymentPlan, PaymentPlanValue
 )
 
-API_KEY = "27b84afeeef929815ab080ae22b29383"
+API_KEY = os.getenv("ESTATY_API_KEY")
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 DETAIL_URL = "https://panel.estaty.app/api/v1/getProperty"
 FILTER_URL = "https://estaty.app/api/v1/filter"
