@@ -4,12 +4,16 @@ import requests
 from dateutil import parser as date_parser
 from django.core.management.base import BaseCommand
 from api.models import Property, PropertyUnit
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set up logging
 log = logging.getLogger(__name__)
 
 # API endpoints and headers
-API_KEY = "27b84afeeef929815ab080ae22b29383"
+API_KEY = os.getenv("ESTATY_API_KEY")
 GET_PROPERTIES_URL = "https://panel.estaty.app/api/v1/getProperties"
 FILTER_URL = "https://panel.estaty.app/api/v1/filter"
 HEADERS = {
