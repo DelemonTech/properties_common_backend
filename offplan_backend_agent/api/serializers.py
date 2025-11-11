@@ -166,7 +166,10 @@ class PropertySerializer(serializers.ModelSerializer):
     #     # else:
     #     #     return f"{total_subunits} units"
     
-    
+class PropertyBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ["id", "title"]    
 
 class AgentDetailSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
