@@ -45,7 +45,7 @@ class PropertyListView(APIView):
         return paginator.get_paginated_response(serializer.data)
     
 class LargePagination(PageNumberPagination):
-    page_size = 50  # show 50 items per page
+    page_size = 250  # show 250 items per page
 
     def get_paginated_response(self, data):
         request = self.request
@@ -64,7 +64,7 @@ class LargePagination(PageNumberPagination):
             "errors": None
         })
 
-class PropertyList50View(APIView):
+class PropertyList250View(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request: Request):
