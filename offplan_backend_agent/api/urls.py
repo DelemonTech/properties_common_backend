@@ -2,7 +2,7 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from api.views.agent_details_username import AgentDetailByUsernameView
 from api.views.property_filter import FilterPropertiesView
-from api.views.properties_list import PropertyListView, PropertyList50View
+from api.views.properties_list import PropertyListView, PropertyList250View
 from api.views.property_details import PropertyDetailView
 from api.views.cities_list import CityListView
 from api.views.agent_register import AgentRegisterView
@@ -29,7 +29,7 @@ urlpatterns = [
     path("agents/frontend/", AgentListFrontendView.as_view(), name="agent-list-frontend"),
     path("properties/filter/", FilterPropertiesView.as_view(), name="property-filter"),
     path("properties/", PropertyListView.as_view(), name="property-list"),
-    path("properties/large/", PropertyList50View.as_view(), name="property-list-50"),
+    path("properties/large/", PropertyList250View.as_view(), name="property-list-250"),
     path("property/<int:id>/", PropertyDetailView.as_view(), name="property-detail"),
     path("cities/", CityListView.as_view(), name="city-list"),
     path('register/', AgentRegisterView.as_view(), name='register-agent'),
