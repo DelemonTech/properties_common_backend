@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from django.urls import reverse
 from api.models import Property
-from api.serializers import PropertySerializer
+from api.serializers import PropertySerializer, PropertyBasicSerializer
 from django.db.models import Sum
 
 
@@ -43,3 +43,43 @@ class PropertyListView(APIView):
         paginated_qs = paginator.paginate_queryset(properties, request)
         serializer = PropertySerializer(paginated_qs, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
+    
+class LargePagination(PageNumberPagination):
+    page_size = 50  # show 50 items per page
+
+    def get_paginated_response(self, data):
+        request = self.request
+        current_page = self.page.number
+
+        return Response({
+            "status": True,
+            "message": "Properties fetched successfully",
+            "data": {
+                "count": self.page.paginator.count,
+                "current_page": current_page,
+                "next_page_url": self.get_next_link(),
+                "previous_page_url": self.get_previous_link(),
+                "results": data
+            },
+            "errors": None
+        })
+
+class PropertyList50View(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request):
+        # Annotate each property with total unit count (if needed, optional)
+        properties = Property.objects.annotate(
+            subunit_count=Sum('property_units__unit_count')
+        )
+
+        paginator = LargePagination()
+        paginator.request = request
+        paginated_qs = paginator.paginate_queryset(properties, request)
+
+        serializer = PropertyBasicSerializer(
+            paginated_qs, many=True
+        )
+
+        return paginator.get_paginated_response(serializer.data)
+
