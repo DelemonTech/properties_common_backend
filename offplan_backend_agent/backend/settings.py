@@ -107,6 +107,7 @@ ALLOWED_HOSTS = [
     "offplan.market",
     "www.offplan.market",
     "54.197.194.173",
+    "microservice.x-opp.com"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -123,6 +124,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://offplan-backend.onrender.com",
     "https://offplan.market",
     "http://54.197.194.173",
+    "https://microservice.x-opp.com"
 ]
 
 CKEDITOR_CONFIGS = {
