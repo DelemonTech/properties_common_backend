@@ -70,6 +70,11 @@ class Command(BaseCommand):
                 total_imported += 1
             page += 1
 
+        # --- SAFETY VALVE ---
+        if not estaty_ids:
+            self.stdout.write(self.style.ERROR("❌ No properties fetched from API. Aborting deletion to protect local data."))
+            return # STOP HERE. Do not delete anything!
+
         self.delete_removed_properties(estaty_ids)
         self.stdout.write(self.style.SUCCESS(f"🏑 Done! Total properties saved: {total_imported}"))
 
