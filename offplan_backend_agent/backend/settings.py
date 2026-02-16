@@ -35,7 +35,7 @@ AWS_S3_CORS = [
 ]
 
 # AWS S3 Configuration - Force global endpoint
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+#AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = 'us-east-1'  # Force us-east-1 for global endpoint
@@ -52,8 +52,8 @@ AWS_S3_URL_PROTOCOL = 'https:'
 AWS_S3_ENDPOINT_URL = 'https://s3.amazonaws.com'
 
 # Storage backends
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
+#DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+#STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
 
 AWS_LOCATION = 'uploads'
 # CKEditor uploads inside "uploads/content/ckeditor/"
@@ -61,8 +61,11 @@ CKEDITOR_UPLOAD_PATH = "uploads/content/ckeditor/"
 
 
 # URL configuration
-MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
-
+#MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
+# settings.py
+MEDIA_URL = '/media/'
+# This points to the base directory of your project
+MEDIA_ROOT = BASE_DIR
 # settings.py - Add detailed logging for admin
 LOGGING = {
     'version': 1,
@@ -153,7 +156,7 @@ INSTALLED_APPS = [
     'api.blog',
     'drf_yasg',
     'corsheaders',
-    'storages',
+    #'storages',
     'ckeditor',
     'tinymce',
 ]
