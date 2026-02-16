@@ -27,6 +27,20 @@ class District(models.Model):
 
 class DeveloperCompany(models.Model):
     name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
+    user_id = models.IntegerField(null=True, blank=True) # Or ForeignKey if linking to a User model
+    
+    # Media & Web
+    logo = models.URLField(max_length=500, null=True, blank=True)
+    website = models.URLField(max_length=500, null=True, blank=True)
+    
+    # Contact Details
+    email = models.EmailField(null=True, blank=True)
+    phone = models.CharField(max_length=50, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    
+    # Content
+    overview = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
