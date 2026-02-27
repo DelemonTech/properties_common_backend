@@ -67,3 +67,6 @@ coverage.xml
 
 #Logs
 .log
+property_covers/
+property_gallery/
+media/
