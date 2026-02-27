@@ -31,7 +31,7 @@ class DeveloperCompany(models.Model):
     user_id = models.IntegerField(null=True, blank=True) # Or ForeignKey if linking to a User model
     
     # Media & Web
-    logo = models.URLField(max_length=500, null=True, blank=True)
+    logo = models.ImageField(upload_to='developer_logos/', null=True, blank=True)
     website = models.URLField(max_length=500, null=True, blank=True)
     
     # Contact Details

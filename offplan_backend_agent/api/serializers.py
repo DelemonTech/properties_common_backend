@@ -68,15 +68,25 @@ class CitySerializerWithDistricts(serializers.ModelSerializer):
             "ar":obj.arabic_city_name,
             "fa":obj.farsi_city_name,
         }
-    
-    
-        model = City
-        fields = ['id', 'name', 'arabic_city_name', 'farsi_city_name', 'districts']
+
 
 class DeveloperCompanySerializer(serializers.ModelSerializer):
+    logo = serializers.SerializerMethodField()
+
     class Meta:
         model = DeveloperCompany
-        fields = ["id", "name"]
+        fields = [
+            "id", "name", "slug", "user_id", "logo", 
+            "website", "email", "phone", "address", "overview"
+        ]
+
+    def get_logo(self, obj):
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
 
 class PropertySerializer(serializers.ModelSerializer):
     city = CitySerializer()
