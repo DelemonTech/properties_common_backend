@@ -11,6 +11,7 @@ import json
 import os
 from dotenv import load_dotenv
 from django.db import transaction
+from django.core.files.base import ContentFile
 
 load_dotenv()
 
@@ -23,7 +24,7 @@ from api.models import (
 API_KEY = os.getenv("ESTATY_API_KEY")
 LISTING_URL = "https://panel.estaty.app/api/v1/getProperties"
 DETAIL_URL = "https://panel.estaty.app/api/v1/getProperty"
-FILTER_URL = "https://estaty.app/api/v1/filter"
+FILTER_URL = "https://panel.estaty.app/api/v1/filter"
 FILTERS_URL = "https://panel.estaty.app/api/v1/getFilters"
 
 HEADERS = {
@@ -46,6 +47,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # self.stdout.write(self.style.SUCCESS("🔄 Syncing filter data from Estaty..."))
         # self.sync_filters_from_estaty()
+
+        self.sync_developers_detailed()
 
         self.stdout.write(self.style.SUCCESS("✅ Starting Estaty property import..."))
         page = 1
@@ -84,6 +87,71 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("✅ Property Unit import completed successfully."))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"❌ Failed to import property units: {str(e)}"))
+
+    def download_and_save_logo(self, developer_instance, logo_url):
+        if not logo_url:
+            return
+
+        try:
+            # Note: requests is already imported in your script
+            response = requests.get(logo_url, timeout=10)
+            if response.status_code == 200:
+                # Extract the file name (e.g., 'logo.png')
+                file_name = os.path.basename(logo_url)
+                
+                # Save the binary content to the ImageField
+                developer_instance.logo.save(
+                    file_name, 
+                    ContentFile(response.content), 
+                    save=True
+                )
+        except Exception as e:
+            self.stderr.write(self.style.WARNING(f"⚠️ Could not download logo for {developer_instance.name}: {e}"))
+
+    def sync_developers_detailed(self):
+        """Fetches detailed developer data from the /filter endpoint"""
+        self.stdout.write(self.style.SUCCESS("🔍 Syncing detailed developer profiles..."))
+        try:
+            response = requests.post(FILTER_URL, headers=HEADERS, json={})
+            response.raise_for_status()
+            data = response.json()
+            
+            properties = data.get("properties", [])
+            
+            count = 0
+            for prop_data in properties:
+                dev_data = prop_data.get("developer_company")
+                if not dev_data or not dev_data.get("id"):
+                    continue
+
+                # Populate ALL text fields for the developer
+                developer, created = DeveloperCompany.objects.update_or_create(
+                    id=dev_data.get("id"),
+                    defaults={
+                        "name": dev_data.get("name"),
+                        "slug": dev_data.get("slug"),
+                        "user_id": dev_data.get("user_id"), # Added back
+                        "website": dev_data.get("website"),
+                        "email": dev_data.get("email"),
+                        "phone": dev_data.get("phone"),
+                        "address": dev_data.get("address"),
+                        "overview": dev_data.get("overview"),
+                    }
+                ) 
+                
+                # Handle Logo Download
+                logo_url = dev_data.get("logo")
+                # Only download if there's a URL and we don't already have a local file
+                if logo_url and not developer.logo:
+                    self.stdout.write(f"📥 Downloading new logo for: {developer.name}")
+                    self.download_and_save_logo(developer, logo_url)
+                    
+                count += 1
+            
+            self.stdout.write(self.style.SUCCESS(f"✅ Detailed Developer Sync Complete ({count} records processed)"))
+            
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(f"❌ Failed to sync detailed developers: {e}"))
 
 # --------------- FETCHING ALL FILTERS BY /getFilters ENDPOINT -----------------------
 
@@ -233,12 +301,19 @@ class Command(BaseCommand):
 
         
 
-        # Developer
-        developer_data = data.get("developer_company") or {}
-        developer, _ = DeveloperCompany.objects.update_or_create(
-            id=developer_data.get("id"),
-            defaults={"name": developer_data.get("name") or "Unnamed Developer"}
-        )
+        # Developer handling inside the property loop
+        dev_data = data.get("developer_company") or {}
+        dev_id = dev_data.get("id")
+        
+        if dev_id:
+            # Use get_or_create here so we don't overwrite the detailed info 
+            # we just fetched with potentially thinner data from /getProperty
+            developer, created = DeveloperCompany.objects.get_or_create(
+                id=dev_id,
+                defaults={"name": dev_data.get("name") or "Unnamed Developer"}
+            )
+        else:
+            developer = None       
 
         # City
         city_data = data.get("city") or {}
