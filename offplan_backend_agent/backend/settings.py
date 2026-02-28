@@ -65,7 +65,7 @@ CKEDITOR_UPLOAD_PATH = "uploads/content/ckeditor/"
 # settings.py
 MEDIA_URL = '/media/'
 # This points to the base directory of your project
-MEDIA_ROOT = BASE_DIR
+MEDIA_ROOT = '/home/ubuntu/properties_common_backend/offplan_backend_agent/'
 # settings.py - Add detailed logging for admin
 LOGGING = {
     'version': 1,
@@ -110,7 +110,8 @@ ALLOWED_HOSTS = [
     "offplan.market",
     "www.offplan.market",
     "54.197.194.173",
-    "microservice.x-opp.com"
+    "microservice.x-opp.com",
+    "3.91.248.7"
 ]
 
 CSRF_TRUSTED_ORIGINS = [

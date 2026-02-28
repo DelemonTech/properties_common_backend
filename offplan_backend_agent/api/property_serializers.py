@@ -78,9 +78,14 @@ class SalesStatusSerializer(serializers.ModelSerializer):
 
 
 class PropertyImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
     class Meta:
         model = PropertyImage
         fields = ["image", "property_id", "type"]
+    def get_image(self, obj):
+        if obj.image:
+            return f"https://microservice.x-opp.com{obj.image.url}"
+        return None
 
 # class FacilityNameSerializer(serializers.ModelSerializer):
 #     facilities = serializers.SerializerMethodField()

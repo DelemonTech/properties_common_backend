@@ -85,7 +85,7 @@ class PropertySerializer(serializers.ModelSerializer):
     developer = DeveloperCompanySerializer()
     subunit_count = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
-
+    cover = serializers.SerializerMethodField()
     class Meta:
         model = Property
         fields = [
@@ -95,6 +95,16 @@ class PropertySerializer(serializers.ModelSerializer):
             "updated_at", "city", "district", "developer","subunit_count",
            
         ]
+    def get_cover(self, obj):
+        if obj.cover:
+            # SAFETY CHECK: If it hasn't been downloaded yet and is still an external Estaty link
+            if str(obj.cover).startswith('http'):
+                return str(obj.cover)
+                
+            # YOUR BULLETPROOF LOGIC: Force your domain for local files
+            return f"https://microservice.x-opp.com{obj.cover.url}"
+            
+        return None
     def get_title(self, obj):
         return {
             "en": obj.title or "",

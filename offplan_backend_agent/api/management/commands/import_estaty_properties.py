@@ -11,6 +11,7 @@ import json
 import os
 from dotenv import load_dotenv
 from django.db import transaction
+from django.core.files.base import ContentFile
 
 load_dotenv()
 
@@ -295,12 +296,13 @@ class Command(BaseCommand):
         updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
 
         with transaction.atomic():
+            api_cover_url = data.get("cover")
             prop, _ = Property.objects.update_or_create(
                 id=data["id"],
                 defaults={
                     "title": title,
                     "description": data.get("description") or "",
-                    "cover": data.get("cover"),
+                    #"cover": data.get("cover"),
                     "address": data.get("address"),
                     "address_text": data.get("address_text"),
                     "delivery_date": convert_mm_yyyy_to_yyyymm(data.get("delivery_date")),
@@ -324,6 +326,24 @@ class Command(BaseCommand):
                     "updated_at": updated_at
                 }
             )
+            
+            if api_cover_url and api_cover_url.startswith('http'):
+                try:
+                    # Extract filename from URL
+                    file_name = os.path.basename(api_cover_url)
+            
+                    # Request the image
+                    response = requests.get(api_cover_url, timeout=15)
+                    response.raise_for_status()
+
+                    # Using .save() on the field updates the database to the LOCAL path
+                    # and moves the file to your /media/ folder automatically
+                    prop.cover.save(file_name, ContentFile(response.content), save=True)
+                    self.stdout.write(self.style.SUCCESS(f"✅ Local path updated for: {prop.id}"))
+            
+                except Exception as e:
+                    self.stderr.write(self.style.ERROR(f"❌ Failed to store cover locally: {e}"))
+
 
             # Facilities (safe get by ID only)
             # prop.facilities.clear()
@@ -362,12 +382,35 @@ class Command(BaseCommand):
             # Images
             prop.property_images.all().delete()
             for img in data.get("property_images") or []:
-                PropertyImage.objects.create(
+                image_url = img.get("image")
+                if not image_url:
+                    continue
+
+                new_image_obj = PropertyImage(
                     property=prop,
-                    image=img.get("image"),
                     type=img.get("type", 2),
                     created_at=make_aware(datetime.now())
                 )
+
+                try:
+                    # 1. Download the image content
+                    img_response = requests.get(image_url, timeout=10)
+                    img_response.raise_for_status()
+
+                    # 2. Extract the file name from the URL
+                    file_name = os.path.basename(image_url)
+
+                    # 3. Save the binary content to the ImageField
+                    # This automatically saves the file to your MEDIA_ROOT
+                    new_image_obj.image.save(
+                        file_name, 
+                        ContentFile(img_response.content), 
+                        save=True
+                    )
+                    print(f"📸 Downloaded and saved image: {file_name}")
+
+                except Exception as e:
+                    log.error(f"❌ Failed to download image {image_url}: {e}")
 
             # Payment Plans
             prop.payment_plans.all().delete()
