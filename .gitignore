@@ -67,3 +67,5 @@ coverage.xml
 
 #Logs
 .log
+offplan_backend_agent/property_gallery/
+offplan_backend_agent/property_covers/
