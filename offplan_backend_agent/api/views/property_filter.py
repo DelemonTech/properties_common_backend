@@ -54,7 +54,6 @@ class FilterPropertiesView(APIView):
         paginator = CustomPagination()
         paginator.request = request
         paginated_qs = paginator.paginate_queryset(queryset.distinct(), request)
-        PropertySerializer(paginated_qs, many=True)
         serializer = PropertySerializer(paginated_qs, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
