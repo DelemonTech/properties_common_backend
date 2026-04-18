@@ -35,33 +35,34 @@ AWS_S3_CORS = [
 ]
 
 # AWS S3 Configuration - Force global endpoint
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = 'us-east-1'  # Force us-east-1 for global endpoint
+# AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+# AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+# AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+# AWS_S3_REGION_NAME = 'us-east-1'  
+ 
+# AWS_S3_ADDRESSING_STYLE = 'path'
+# AWS_S3_SIGNATURE_VERSION = 's3v4'
+# AWS_S3_CUSTOM_DOMAIN = None
+# AWS_DEFAULT_ACL = None
+# AWS_S3_FILE_OVERWRITE = False
+# AWS_S3_URL_PROTOCOL = 'https:'
 
-# Force specific S3 settings for problematic buckets
-AWS_S3_ADDRESSING_STYLE = 'path'
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_CUSTOM_DOMAIN = None
-AWS_DEFAULT_ACL = None
-AWS_S3_FILE_OVERWRITE = False
-AWS_S3_URL_PROTOCOL = 'https:'
 
-# Explicit endpoint configuration
-AWS_S3_ENDPOINT_URL = 'https://s3.amazonaws.com'
+# AWS_S3_ENDPOINT_URL = 'https://s3.amazonaws.com'
 
-# Storage backends
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
 
-AWS_LOCATION = 'uploads'
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STATICFILES_STORAGE = 'storages.backends.s3boto3.StaticS3Boto3Storage'
+
+# AWS_LOCATION = 'uploads'
 # CKEditor uploads inside "uploads/content/ckeditor/"
 CKEDITOR_UPLOAD_PATH = "uploads/content/ckeditor/"
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # URL configuration
-MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
+# MEDIA_URL = f"https://s3.amazonaws.com/{os.getenv('AWS_STORAGE_BUCKET_NAME')}/"
 
 # settings.py - Add detailed logging for admin
 LOGGING = {
@@ -85,7 +86,7 @@ LOGGING = {
 }
 
 # Also add this for more verbose S3 operations
-AWS_S3_FILE_OVERWRITE = True  # Temporarily for testing
+AWS_S3_FILE_OVERWRITE = True  
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -246,15 +247,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
-        'OPTIONS': {
-            'options': '-c search_path=public',
-#            'sslmode': 'require'
-        }
+        'NAME': 'properties_db',
+        'USER': 'micro_user',
+        'PASSWORD': 'micro_db',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

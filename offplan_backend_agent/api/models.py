@@ -90,7 +90,7 @@ class Property(models.Model):
     farsi_desc = models.TextField(blank=True,null=True)
     arabic_desc = models.TextField(blank=True,null=True)
     
-    cover = models.URLField(blank=True, null=True)
+    cover = models.ImageField(upload_to='property_covers/', blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     address_text = models.CharField(max_length=255, blank=True, null=True)
     delivery_date = models.BigIntegerField(blank=True, null=True)  # UNIX timestamp
@@ -153,7 +153,7 @@ class PropertyUnit(models.Model):
 class PropertyImage(models.Model):
     id = models.BigAutoField(primary_key=True)
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='property_images')
-    image = models.URLField()
+    image = models.ImageField(upload_to='property_images/')
     type = models.IntegerField()  # 1 = floorplan, 2 = gallery, etc.
     property_unit = models.ForeignKey(PropertyUnit, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(null=True, blank=True)

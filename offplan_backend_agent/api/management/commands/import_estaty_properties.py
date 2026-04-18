@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 from django.db import transaction
 from django.core.files.base import ContentFile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 load_dotenv()
 
@@ -41,8 +42,63 @@ def convert_mm_yyyy_to_yyyymm(date_str: str) -> Optional[int]:
     except Exception:
         return None
 
+
+
 class Command(BaseCommand):
     help = "Import and save Estaty properties"
+
+    def download_image(self, url: str, field_name: str = "image"):
+        """Downloads an image from URL and returns a ContentFile tuple (name, content)"""
+        if not url:
+            return None, None
+        try:
+            response = requests.get(url, timeout=15)
+            if response.status_code == 200:
+                file_name = os.path.basename(url.split("?")[0])  # strip query params
+                return file_name, ContentFile(response.content)
+        except Exception as e:
+            self.stderr.write(self.style.WARNING(f"⚠️ Could not download {field_name} from {url}: {e}"))
+        return None, None
+    
+    def download_images_for_property(self, prop, images_data):
+        """Download all images for a property concurrently"""
+        existing_images = set(
+            os.path.basename(img.image.name)
+            for img in prop.property_images.all()
+            if img.image
+        )
+
+        # Filter only new images
+        to_download = []
+        for img in images_data:
+            img_url = img.get("image")
+            if not img_url:
+                continue
+            url_file_name = os.path.basename(img_url.split("?")[0])
+            if url_file_name not in existing_images:
+                to_download.append(img)
+
+        if not to_download:
+            return  # ✅ Nothing new to download
+
+        def download_single(img):
+            img_url = img.get("image")
+            file_name, content = self.download_image(img_url, "property image")
+            return img, file_name, content
+
+        # ✅ Download all images concurrently (5 at a time)
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(download_single, img): img for img in to_download}
+            for future in as_completed(futures):
+                img, file_name, content = future.result()
+                if file_name and content:
+                    img_instance = PropertyImage(
+                        property=prop,
+                        type=img.get("type", 2),
+                        created_at=make_aware(datetime.now())
+                    )
+                    img_instance.image.save(file_name, content, save=False)
+                    img_instance.save()
 
     def handle(self, *args, **options):
         # self.stdout.write(self.style.SUCCESS("🔄 Syncing filter data from Estaty..."))
@@ -119,18 +175,26 @@ class Command(BaseCommand):
             properties = data.get("properties", [])
             
             count = 0
+            seen_developer_ids = set()  # ✅ Track processed developers
+
             for prop_data in properties:
                 dev_data = prop_data.get("developer_company")
                 if not dev_data or not dev_data.get("id"):
                     continue
 
-                # Populate ALL text fields for the developer
+                dev_id = dev_data.get("id")
+
+                # ✅ Skip if we already processed this developer
+                if dev_id in seen_developer_ids:
+                    continue
+                seen_developer_ids.add(dev_id)
+
                 developer, created = DeveloperCompany.objects.update_or_create(
-                    id=dev_data.get("id"),
+                    id=dev_id,
                     defaults={
                         "name": dev_data.get("name"),
                         "slug": dev_data.get("slug"),
-                        "user_id": dev_data.get("user_id"), # Added back
+                        "user_id": dev_data.get("user_id"),
                         "website": dev_data.get("website"),
                         "email": dev_data.get("email"),
                         "phone": dev_data.get("phone"),
@@ -141,18 +205,22 @@ class Command(BaseCommand):
                 
                 # Handle Logo Download
                 logo_url = dev_data.get("logo")
-                # Only download if there's a URL and we don't already have a local file
-                if logo_url and not developer.logo:
-                    self.stdout.write(f"📥 Downloading new logo for: {developer.name}")
-                    self.download_and_save_logo(developer, logo_url)
+                if logo_url:
+                    url_file_name = os.path.basename(logo_url.split("?")[0])
+                    current_name = os.path.basename(developer.logo.name) if developer.logo else None
+                    
+                    if not developer.logo or current_name != url_file_name:
+                        self.stdout.write(f"📥 Downloading logo for: {developer.name}")
+                        file_name, content = self.download_image(logo_url, "developer logo")
+                        if file_name and content:
+                            developer.logo.save(file_name, content, save=True)
                     
                 count += 1
             
-            self.stdout.write(self.style.SUCCESS(f"✅ Detailed Developer Sync Complete ({count} records processed)"))
+            self.stdout.write(self.style.SUCCESS(f"✅ Detailed Developer Sync Complete ({count} unique developers processed)"))
             
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"❌ Failed to sync detailed developers: {e}"))
-
 # --------------- FETCHING ALL FILTERS BY /getFilters ENDPOINT -----------------------
 
     # def sync_filters_from_estaty(self):
@@ -297,17 +365,11 @@ class Command(BaseCommand):
             return None
         
         title = data.get("title") or f"Untitled Property {data['id']}"
-        print(title,'title')
 
-        
-
-        # Developer handling inside the property loop
+        # Developer
         dev_data = data.get("developer_company") or {}
         dev_id = dev_data.get("id")
-        
         if dev_id:
-            # Use get_or_create here so we don't overwrite the detailed info 
-            # we just fetched with potentially thinner data from /getProperty
             developer, created = DeveloperCompany.objects.get_or_create(
                 id=dev_id,
                 defaults={"name": dev_data.get("name") or "Unnamed Developer"}
@@ -327,13 +389,12 @@ class Command(BaseCommand):
         district_id = district_data.get("id")
         if not district_id:
             log.warning(f"⚠️ Skipping property due to missing district ID: {district_data}")
-            return None  # or continue
+            return None
 
         District.objects.filter(id=district_id).update(
             name=district_data.get("name") or "Unnamed District",
             city=city
         )
-
         district, created = District.objects.get_or_create(
             id=district_id,
             defaults={
@@ -341,7 +402,6 @@ class Command(BaseCommand):
                 "city": city
             }
         )
-        
 
         # Property Type
         prop_type_data = data.get("property_type") or {}
@@ -364,18 +424,16 @@ class Command(BaseCommand):
             defaults={"name": sales_status_data.get("name") or "Unnamed Sales Status"}
         )
 
-        
-
         updated_at_raw = parse_datetime(data.get("updated_at")) or now()
         updated_at = make_aware(updated_at_raw) if is_naive(updated_at_raw) else updated_at_raw
 
         with transaction.atomic():
-            prop, _ = Property.objects.update_or_create(
+            # ✅ Always update text/data fields
+            prop, created = Property.objects.update_or_create(
                 id=data["id"],
                 defaults={
                     "title": title,
                     "description": data.get("description") or "",
-                    "cover": data.get("cover"),
                     "address": data.get("address"),
                     "address_text": data.get("address_text"),
                     "delivery_date": convert_mm_yyyy_to_yyyymm(data.get("delivery_date")),
@@ -400,63 +458,61 @@ class Command(BaseCommand):
                 }
             )
 
-            # Facilities (safe get by ID only)
-            # prop.facilities.clear()
-            # for f in data.get("property_facilities", []):
-            #     f_data = f.get("facility", {})
-            #     f_id = f_data.get("id")
-            #     if f_id:
-            #         facility = Facility.objects.filter(id=f_id).first()
-            #         if facility:
-            #             prop.facilities.add(facility)
-            #         print(prop.facilities,'facility')
-            all_facilities = {f.id: f for f in Facility.objects.all()}
-            prop.facilities.clear()
+            # ✅ Cover - only download if changed
+            cover_url = data.get("cover")
+            if cover_url:
+                url_file_name = os.path.basename(cover_url.split("?")[0])
+                current_name = os.path.basename(prop.cover.name) if prop.cover else None
+                if not prop.cover or current_name != url_file_name:
+                    file_name, content = self.download_image(cover_url, "property cover")
+                    if file_name and content:
+                        prop.cover.save(file_name, content, save=True)
 
+            # ✅ Facilities - always re-sync (fast, no file downloads)
+            prop.facilities.clear()
             for f in data.get("property_facilities", []):
                 f_data = f.get("facility", {})
                 f_id = f_data.get("id")
-                facility = all_facilities.get(f_id)
-                if facility:
-                    prop.facilities.add(facility)
-                    print(f"✅ Added: {facility.name}")
-                else:
-                    print(f"❌ Facility with ID {f_id} not found")
-
-            # Grouped Apartments
-            prop.grouped_apartments.all().delete()
-            for g in data.get("grouped_apartments") or []:
-                GroupedApartment.objects.create(
-                    property=prop,
-                    unit_type=g.get("Unit_Type", ""),
-                    rooms=g.get("Rooms", ""),
-                    min_price=g.get("min_price"),
-                    min_area=g.get("min_area")
+                f_name = f_data.get("name")
+                if not f_id:
+                    continue
+                facility, _ = Facility.objects.get_or_create(
+                    id=f_id,
+                    defaults={"name": f_name or "Unnamed Facility"}
                 )
+                prop.facilities.add(facility)
 
-            # Images
-            prop.property_images.all().delete()
-            for img in data.get("property_images") or []:
-                PropertyImage.objects.create(
-                    property=prop,
-                    image=img.get("image"),
-                    type=img.get("type", 2),
-                    created_at=make_aware(datetime.now())
-                )
-
-            # Payment Plans
-            prop.payment_plans.all().delete()
-            for plan in data.get("payment_plans") or []:
-                pp = PaymentPlan.objects.create(
-                    property=prop,
-                    name=plan.get("name"),
-                    description=plan.get("description") or ""
-                )
-                for val in plan.get("values", []):
-                    PaymentPlanValue.objects.create(
-                        property_payment_plan=pp,
-                        name=val.get("name"),
-                        value=val.get("value")
+            # ✅ Grouped Apartments - re-sync only if count changed
+            incoming_apartments = data.get("grouped_apartments") or []
+            if prop.grouped_apartments.count() != len(incoming_apartments):
+                prop.grouped_apartments.all().delete()
+                for g in incoming_apartments:
+                    GroupedApartment.objects.create(
+                        property=prop,
+                        unit_type=g.get("Unit_Type", ""),
+                        rooms=g.get("Rooms", ""),
+                        min_price=g.get("min_price"),
+                        min_area=g.get("min_area")
                     )
+
+            
+            self.download_images_for_property(prop, data.get("property_images") or [])
+
+            # ✅ Payment Plans - re-sync only if count changed
+            incoming_plans = data.get("payment_plans") or []
+            if prop.payment_plans.count() != len(incoming_plans):
+                prop.payment_plans.all().delete()
+                for plan in incoming_plans:
+                    pp = PaymentPlan.objects.create(
+                        property=prop,
+                        name=plan.get("name"),
+                        description=plan.get("description") or ""
+                    )
+                    for val in plan.get("values", []):
+                        PaymentPlanValue.objects.create(
+                            property_payment_plan=pp,
+                            name=val.get("name"),
+                            value=val.get("value")
+                        )
 
         return prop
