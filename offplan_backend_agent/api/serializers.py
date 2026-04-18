@@ -95,6 +95,7 @@ class PropertySerializer(serializers.ModelSerializer):
     developer = DeveloperCompanySerializer()
     subunit_count = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
+    cover = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -105,6 +106,15 @@ class PropertySerializer(serializers.ModelSerializer):
             "updated_at", "city", "district", "developer","subunit_count",
            
         ]
+
+    def get_cover(self, obj):
+        if not obj.cover:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.cover.url)
+        return obj.cover.url
+        
     def get_title(self, obj):
         return {
             "en": obj.title or "",
