@@ -12,7 +12,7 @@ class PropertyDetailView(APIView):
     def get(self, request, id):
         try:
             prop = Property.objects.get(id=id)
-            serializer = PropertyDetailSerializer(prop)
+            serializer = PropertyDetailSerializer(prop, context={'request': request})
 
             return Response({
                 "status": True,

@@ -77,9 +77,7 @@ class PropertyList250View(APIView):
         paginator.request = request
         paginated_qs = paginator.paginate_queryset(properties, request)
 
-        serializer = PropertyBasicSerializer(
-            paginated_qs, many=True
-        )
+        serializer = PropertyBasicSerializer(paginated_qs, many=True, context={'request': request})
 
         return paginator.get_paginated_response(serializer.data)
 
